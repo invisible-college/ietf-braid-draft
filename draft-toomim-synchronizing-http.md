@@ -1,11 +1,11 @@
 ---
-title: Incrementally Better Cookies
+title: Braid: a Synchronizing HTTP
 
-abbrev: cookie-incrementalism
+abbrev: synchronizing-http
 area: Applications and Real-Time
 category: std
 date: {DATE}
-docname: draft-west-cookie-incrementalism-latest
+docname: draft-toomim-synchronizing-http-latest
 ipr: trust200902
 keyword: Internet-Draft
 
@@ -23,11 +23,11 @@ pi:
 
 author:
  -
-    ins: M. West
-    name: Mike West
-    organization: Google
-    email: mkwst@google.com
-    uri: https://www.mikewest.org/
+    ins: M. Toomim
+    name: Michael Toomim
+    organization: Invisible College
+    email: toomim@gmail.com
+    uri: https://invisible.college/@toomim
 
 normative:
   RFC2119:
@@ -88,11 +88,7 @@ informative:
 
 --- abstract
 
-This document proposes two changes to cookies inspired by the properties of the HTTP State Tokens
-mechanism proposed in {{I-D.west-http-state-tokens}}. First, cookies should be treated as
-`SameSite=Lax` by default. Second, cookies that explicitly assert `SameSite=None` in order to enable
-cross-site delivery should also be marked as `Secure`.
-
+Blah blah this is the abstract.
 
 --- middle
 
