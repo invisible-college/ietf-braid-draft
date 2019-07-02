@@ -1,29 +1,9 @@
 # The Braid Protocol
 
-**Braid** is a proposal for a new version of HTTP that transforms it from a state *transfer* protocol into a state *synchronization* protocol.
-
-## Introduction
-
-HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just a state transfer.
-
-HTTP and REST provide state transfer:
-
-<p style="margin-left: 40">
-**HTTP**: HyperText **Transfer** Protocol  
-**REST**: REpresentational State **Transfer**
-</p>
-
-To implement synchronization, today's programmers write code *around* HTTP, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks.
+<!--
+## Extra
 
 Every dynamic website needs synchronization.  However, there is no standard way to do it.
-
-This is perhaps most apparent in the network protocol.  HTTP and REST are state *transfer* systems, not *synchronization*:
-
-<p style="margin-left: 40">
-**HTTP**: HyperText **Transfer** Protocol  
-**REST**: REpresentational State **Transfer**
-</p>
-
 
 The original web was made of static hand-written HTML. But today's web pages are dynamically
 generated from databases, network traffic, and user input. 
@@ -47,8 +27,22 @@ architecture (REST) do not synchronize state.  They only *transfer* state:
 
 Today's web needs synchronization.
 
+-->
+
+**Braid** is a proposal for a new version of HTTP that transforms it from a state *transfer* protocol into a state *synchronization* protocol.
+
+## Introduction
+
+HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just a state transfer.
+
+To implement synchronization, today's programmers write code *around* HTTP, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks.
+
+<br><img src="https://invisible.college/braid/images/the-whole-stack.png"><br><br>
+
+This is a pain. And each developer devises a different—and thus proprietary—stack, which makes it far easier to read and write one's *own* database than another's. Consequently, although websites easily link to each other's *pages*, their internal *data* or *state* are separated into silos with incompatible APIs.
 
 #### Synchronization
+
 *Synchronization* is a general problem that occurs whenever two or more computers or threads access the same state. Synchronization code is tricky to write. It can result in clobbers, corruptions, and race conditions.
 
 Luckily, a set of maturing synchronization technologies (such as Operational Transform and CRDTs) can now automate and encapsulate synchronization within a library. They can synchronize arbitrary JSON data structures across an arbitrary set of computers that make arbitrary mutations, and consistently merge their edits into a valid result, without a central server, in the face of arbitrary network delays and dropouts. In other words, it is now possible to interact with state stored anywhere on a network as if it is a local variable, and program as if it is already downloaded and always up-to-date.
@@ -57,14 +51,6 @@ Luckily, a set of maturing synchronization technologies (such as Operational Tra
 
 Braid puts these technologies into HTTP, to standardize them. HTTP's URLs and requests provide a standard vocabulary for reading and writing state. Braid extends them with the power of Operational Transform and CRDTs.
 
-
-HTTP was designed to *transfer*, but not *synchronize* resources. To see an update, the client has to take initiative and *reload* the resource. This design satisficed when pages were static, written by hand, and rarely updated, but today's websites are dynamically generated from databases, react to user input, and constantly change, synchronizing their state across multiple clients and servers. Now websites need state *synchronization*, not just a state *transfer* protocol.
-
-To implement synchronization, today's programmers write code *around* HTTP, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks.
-
-<br><img src="https://invisible.college/braid/images/the-whole-stack.png"><br><br>
-
-This is a pain. And each developer devises a different—and thus proprietary—stack, which makes it far easier to read and write one's *own* database than another's. Consequently, although websites easily link to each other's *pages*, their internal *data* or *state* are separated into silos with incompatible APIs.
 
 #### Braid makes it easier for websites to share internal state
 
