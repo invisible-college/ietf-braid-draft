@@ -67,7 +67,7 @@ By building support for synchronization technologies into HTTP, we solve a numbe
 
 This makes the internal state of websites open, distributed, and shareable. Whereas HTTP gives each *page* a URL, braid gives each *internal datum* a URL, and makes it as easy to synchronize with (and thus reuse) another site's internal data as linking to a webpage is today. You can program with another site's internal data as if it were a local variable in memory, already downloaded and always up-to-date. This enables a web of connected, linked, synchronized data to develop as an alternative to the centralized websites we see today, just as a web of pages has grown to replace the centralized networks (AOL, Compuserve, Prodigy) of the 1990s.
 
-<br><img src="https://invisible.college/braid/images/aol-to-braid.png"><br><br>
+<br><img src="https://invisible.college/braid/images/aol-to-braid.png" width=600><br><br>
 
 We have a working prototype of the Braid protocol, and have deployed it with production websites. This document describes the new protocol, how it differs from prior versions of HTTP, and a plan to deploy it in a backwards-compatible way, where web developers can opt into the new synchronization features without breaking the rest of the web.
 
