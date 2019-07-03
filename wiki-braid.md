@@ -1,34 +1,5 @@
 # The Braid Protocol
 
-<!--
-## Extra
-
-Every dynamic website needs synchronization.  However, there is no standard way to do it.
-
-The original web was made of static hand-written HTML. But today's web pages are dynamically
-generated from databases, network traffic, and user input. 
-
-.... This is *synchronization* code.  And there is no standard way to
-synchronize.  Each web framework or library has a different way to represent,
-communicate, and update state.  Programmers wire together multiple layers of
-state synchronization code, to keep their HTML user interfaces synchronized
-with the state of their databases.
-
-Data sources compile *into* today's web standards.
-
-In particular, we might want synchronization in the network protocol, that
-connects clients and servers.  But the web's network protocol (HTTP), and its
-architecture (REST) do not synchronize state.  They only *transfer* state:
-
-<p style="margin-left: 40">
-**HTTP**: HyperText **Transfer** Protocol  
-**REST**: REpresentational State **Transfer**
-</p>
-
-Today's web needs synchronization.
-
--->
-
 **Braid** is a proposal for a new version of HTTP that transforms it from a state *transfer* protocol into a state *synchronization* protocol.
 
 ## Introduction
