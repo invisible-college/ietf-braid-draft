@@ -37,7 +37,7 @@ HTTP was initially designed to transfer static pages. If a page changes, it is t
 
 To implement synchronization, today's programmers write code *around* HTTP, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks.
 
-<br><img src="https://invisible.college/braid/images/the-whole-stack.png"><br><br>
+<br><img src="https://invisible.college/braid/images/the-whole-stack.png" width=600><br><br>
 
 This is a pain. And each developer devises a different—and thus proprietary—stack, which makes it far easier to read and write one's *own* database than another's. Consequently, although websites easily link to each other's *pages*, their internal *data* or *state* are separated into silos with incompatible APIs.
 
@@ -58,7 +58,7 @@ Braid makes it easy to use state from anywhere on the internet, no matter where 
 
 This makes the internal state of websites open, distributed, and shareable. Whereas HTTP gives each *page* a URL, braid gives each *internal datum* a URL, and makes it as easy to synchronize with (and thus reuse) another site's internal data as linking to a webpage is today. You can program with another site's internal data as if it were a local variable in memory, already downloaded and always up-to-date. This enables a web of connected, linked, synchronized data to develop as an alternative to the centralized websites we see today, just as a web of pages has grown to replace the centralized networks (AOL, Compuserve, Prodigy) of the 1990s.
 
-<br><img src="https://invisible.college/braid/images/aol-to-braid.png"><br><br>
+<br><img width=600 src="https://invisible.college/braid/images/aol-to-braid.png"><br><br>
 
 #### New features for the web
 
@@ -113,7 +113,7 @@ Each patch replaces a region of space. Each peer's patches have a different colo
 
 If we ignore space, we see just the Time DAG:
 
-<img style="width:100;" src="https://invisible.college/braid/images/dogbirds-time.png">
+<img width=100 src="https://invisible.college/braid/images/dogbirds-time.png">
 
 When two peers edit the same version of state, time forks into a DAG. Time on a network is ambiguous—it is impossible to say which version came first. Thus, the two versions exist in parallel in the DAG.
 
@@ -140,7 +140,7 @@ Different application want to resolve conflicts in different ways. For instance,
 
 For all peers to synchronize, they just need to resolve these bubbles in space in the same way. Thus, we make sure each peer uses the same *resolver* function, for the same region of space. In this case, the resolver has arbitrarily (but consistently) chosen "dog" to come before "bird":
 
-<img style="width:180;" src="https://invisible.college/braid/images/dogbirds-resolve.png">
+<img width=180 src="https://invisible.college/braid/images/dogbirds-resolve.png">
 
 In this example, the resolver simply placed both versions into the resulting string, with a particular order. But the output of a general resolver is arbitrary—a resolver could theoretically read two edited strings in english with NLP, and merge their intent, adjusting syntax and grammar along the way, as long as it did so consistently and deterministically.
 
