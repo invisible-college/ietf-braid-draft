@@ -33,9 +33,9 @@ Today's web needs synchronization.
 
 ## Introduction
 
-HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just a state transfer.
+HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just state transfer.
 
-But there is no standard way to synchronize a website's UI with data. Instead, programmers write code outside the standards, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks. 
+But there is no standard way to synchronize. Instead, programmers write code *around* the standards, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks. 
 
 <br><img src="https://invisible.college/braid/images/the-whole-stack.png"><br><br>
 
