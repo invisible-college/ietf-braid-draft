@@ -33,15 +33,15 @@ Today's web needs synchronization.
 
 ## Introduction
 
-HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just a state transfer.
+HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just state transfer.
 
-To implement synchronization, today's programmers write code *around* HTTP, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks.
+But there is no standard way to synchronize. Instead, programmers write code *around* the standards, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks. The task of connecting a UI with data is one that every dynamic website has to do, but there is no standard way to do it.
 
 <br><img src="https://invisible.college/braid/images/the-whole-stack.png" width=600><br><br>
 
-This is a pain. And each developer devises a different—and thus proprietary—stack, which makes it far easier to read and write one's *own* database than another's. Consequently, although websites easily link to each other's *pages*, their internal *data* or *state* are separated into silos with incompatible APIs.
+This non-standard code must *synchronize* changing data with a UI, across clients and servers.
 
-#### Synchronization
+### Synchronization
 
 *Synchronization* is a general problem that occurs whenever two or more computers or threads access the same state. Synchronization code is tricky to write. It can result in clobbers, corruptions, and race conditions.
 
@@ -50,15 +50,6 @@ Luckily, a set of maturing synchronization technologies (such as Operational Tra
 #### HTTP + Synchronization
 
 Braid puts these technologies into HTTP, to standardize them. HTTP's URLs and requests provide a standard vocabulary for reading and writing state. Braid extends them with the power of Operational Transform and CRDTs.
-
-
-#### Braid makes it easier for websites to share internal state
-
-Braid makes it easy to use state from anywhere on the internet, no matter where it is, who implemented it, how much latency exists, and how frequently the network is up or down. Braid is a standard protocol for [data that changes over time](https://josephg.com/blog/api-for-changes/), or "state."
-
-This makes the internal state of websites open, distributed, and shareable. Whereas HTTP gives each *page* a URL, braid gives each *internal datum* a URL, and makes it as easy to synchronize with (and thus reuse) another site's internal data as linking to a webpage is today. You can program with another site's internal data as if it were a local variable in memory, already downloaded and always up-to-date. This enables a web of connected, linked, synchronized data to develop as an alternative to the centralized websites we see today, just as a web of pages has grown to replace the centralized networks (AOL, Compuserve, Prodigy) of the 1990s.
-
-<br><img width=600 src="https://invisible.college/braid/images/aol-to-braid.png"><br><br>
 
 #### New features for the web
 
@@ -72,6 +63,11 @@ By building support for synchronization technologies into HTTP, we solve a numbe
 - Web apps get an offline mode for free. Edits from multiple clients merge automatically once they come online. Network failures recover transparently.
 - Servers become optional. Many web apps can function without a server, because peers can synchronize with one another directly over the protocol.
 
+#### Standardizing the insides of websites opens them up
+
+This makes the internal state of websites open, distributed, and shareable. Whereas HTTP gives each *page* a URL, braid gives each *internal datum* a URL, and makes it as easy to synchronize with (and thus reuse) another site's internal data as linking to a webpage is today. You can program with another site's internal data as if it were a local variable in memory, already downloaded and always up-to-date. This enables a web of connected, linked, synchronized data to develop as an alternative to the centralized websites we see today, just as a web of pages has grown to replace the centralized networks (AOL, Compuserve, Prodigy) of the 1990s.
+
+<br><img src="https://invisible.college/braid/images/aol-to-braid.png"><br><br>
 
 We have a working prototype of the Braid protocol, and have deployed it with production websites. This document describes the new protocol, how it differs from prior versions of HTTP, and a plan to deploy it in a backwards-compatible way, where web developers can opt into the new synchronization features without breaking the rest of the web.
 
