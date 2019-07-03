@@ -442,9 +442,7 @@ Braid is made backwards-compatible in 3 ways:
     - Everything can be represented as replace
   - When two things edit the same region, space is a DAG
 
-So time and space are both relative.  But any CPU or human operates with a
-thread.  Whenever we have multiple threads, there's no objective ordering of
-time and space, so to synchronize, we can use DAGs for both.
+So time and space are both relative.  But any CPU or human operates with a thread.  Whenever we have multiple threads, there's no objective ordering of time and space, so to synchronize, we can use DAGs for both.
 
 ### URLs
   - URLs are arbitrary string paths
@@ -469,25 +467,20 @@ time and space, so to synchronize, we can use DAGs for both.
   - We think in "State", rather than "Actions"
     - This is the same difference as REST vs. RPC
     - We can capture an action with a diff
-    - That way there's less coupling -- even middleware can host state without
-      knowing the semantics of the app
-    - We can also attach a name to a diff, optionally, to augment it with any
-      specific semantics necessary to an app that needs it.
+    - That way there's less coupling -- even middleware can host state without knowing the semantics of the app
+    - We can also attach a name to a diff, optionally, to augment it with any specific semantics necessary to an app that needs it.
   - We Represent changes with diffs
     - This both makes network messages smaller
     - And allows for merging changes
     - If two things change at the same time, we need a resolver
-  - Re handle conflicts with a Resolver
+  - We handle conflicts with a Resolver
     - This is instead of a totally different datatype
     - Or instead of different actions, with custom merge semantics
-    - This abstracts away the core intrinsic difference between synchronizers:
-      how they resolve conflicts
+    - This abstracts away the core intrinsic difference between synchronizers: how they resolve conflicts
       - All other resolutions are unambiguous.
   - We coordinate pruning history with acknowledgements
-    - Some systems say when to delete, or infer that someone has received
-      something
-    - But in any system, the underlying need for state is to sync when someone
-      reconnects -- the "fork point"
+    - Some systems say when to delete, or infer that someone has received something
+    - But in any system, the underlying need for state is to sync when someone reconnects -- the "fork point"
       - And if everyone always adds to the newest versions, everyone can delete old ones
     - So we just ack those, and know that we will only add history to the end.
 
