@@ -51,11 +51,6 @@ Luckily, a set of maturing synchronization technologies (such as Operational Tra
 
 Braid puts these technologies into HTTP, to standardize them. HTTP's URLs and requests provide a standard vocabulary for reading and writing state. Braid extends them with the power of Operational Transform and CRDTs.
 
-
-#### Braid makes it easier for websites to share internal state
-
-Braid makes it easy to use state from anywhere on the internet, no matter where it is, who implemented it, how much latency exists, and how frequently the network is up or down. Braid is a standard protocol for [data that changes over time](https://josephg.com/blog/api-for-changes/), or "state."
-
 This makes the internal state of websites open, distributed, and shareable. Whereas HTTP gives each *page* a URL, braid gives each *internal datum* a URL, and makes it as easy to synchronize with (and thus reuse) another site's internal data as linking to a webpage is today. You can program with another site's internal data as if it were a local variable in memory, already downloaded and always up-to-date. This enables a web of connected, linked, synchronized data to develop as an alternative to the centralized websites we see today, just as a web of pages has grown to replace the centralized networks (AOL, Compuserve, Prodigy) of the 1990s.
 
 <br><img src="https://invisible.college/braid/images/aol-to-braid.png"><br><br>
