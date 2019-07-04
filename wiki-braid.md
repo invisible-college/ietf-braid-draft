@@ -6,11 +6,13 @@
 
 HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just state transfer.
 
-But there is no standard way to synchronize. Instead, programmers write code *around* the standards, wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks. The task of connecting a UI with data is one that every dynamic website has to do, but there is no standard way to do it.
+However, there is no standard way to synchronize. Instead, programmers write their own code outside the standards, to wire together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks. The task of connecting a UI with data is one that every dynamic website has to do, but there is no standard way to do it.
 
-<br><img src="https://invisible.college/braid/images/the-whole-stack.png" width=600><br><br>
+<img src="https://invisible.college/braid/images/the-whole-stack2.png" style="max-width: 650">
 
-This non-standard code must *synchronize* changing data with a UI, across clients and servers.
+
+
+This non-standard code is necessary to connect a database with a UI, across a network, and keep multiple clients and servers synchronized. But it is a pain to program, and the resulting internal state of the application becomes proprietary and difficult for other websites to access. A standard protocol for synchronizing internal state could simultaneously make web programming both (1) easier and (2) more open.
 
 ### Synchronization
 
@@ -42,20 +44,66 @@ This makes the internal state of websites open, distributed, and shareable. Wher
 
 We have a working prototype of the Braid protocol, and have deployed it with production websites. This document describes the new protocol, how it differs from prior versions of HTTP, and a plan to deploy it in a backwards-compatible way, where web developers can opt into the new synchronization features without breaking the rest of the web.
 
-## The Braid Model
+## The Braid Spacetime Model
 
-The Braid Protocol supports many synchronizers. Any OT or CRDT system can translate its network traffic into Braid messages, and back again. This allows any set of OT or CRDT systems to interoperate, if they resolve ambiguities in the same way for conflicting edits to the same region of space.
+Even though there are many synchronizers, it is possible for them to communicate in a common language, with a common set of concepts. Different synchronizers use different data structures internally, and have different network messages-- however, the *information* they send can all be represented in a common language, using a common set of concepts:
 
-Thus, the Braid protocol allows any peer to implement a different OT or CRDT algorithm, with a different set of tradeoffs in performance, as long as they agree on a model of how they *resolve* conflicting changes.
+ - **Versions** define points in time, irrespective of space
+ - **Locations** define points of space, irrespective of time
+ - **Patches** replace regions of space, across spans of time
+ - **Merges Type** define how to merge edits at the same location
 
-### Interactive demo
+Within these concepts, there are many ways to express each one. This section explains a proposal for each, and gives the reasons for its design.
 
-On the left are shared state as seen by four computers. You can edit each computer's state, and click the arrows to transfer messages amongst them. Hover over the braid to see how mergers are resolved.
+This design strives to make simple synchronizers easy, and complex synchronizers possible. Some synchronizers are simple to write, but lack features. Some features require more complex implementations. Our common language must allow different synchronizers to communicate.
 
-<iframe src="/play" width="100%" height="500px" frameborder="0"></iframe>
-[Try it fullscreen here.](/play)
+### Versions
 
-The Braid represents spacetime of state:
+All synchronizers need to keep track of *time*, to record when state changes happen, but they use many different methods to represent it, such as vector clocks (automerge), incrementing version numbers (sharedb), and hashes (git).
+
+Each change marks a *version*. A version is a single point in time.
+
+A basic version for the `hello-world` state looks like this:
+```
+{
+  key: "hello-world",
+  val: "Hello, world!",
+  version: "helwjfoj",
+  parents: ["82h23", "ajwe3"]
+}
+```
+
+#### Time is a DAG
+
+We normally think of time as a line. This tells you the ordering of all edits. However, if a state is copied over a network, it will take time for it to arrive on the new peer. And if both peers then *edit* the state, there will be no way to know which edit happened first. Time will then fork in two:
+
+<img width=100 src="https://invisible.college/braid/images/dogbirds-time.png">
+
+There is no way to tell which of the middle red or blue events came first. So these events happen side-by-side.
+
+In the DAG, each version has multiple parents.
+
+#### Versions are unique IDs
+
+In the common language, each version is expressed as a unique, but otherwise arbitrary string. Here are three example versions:
+
+ - `2wj256ie8fs8`
+ - `3` (used by ShareDB)
+ - `{ClientA: 4, ClientB: 3, ClientC: 7, ClientX: 3}` (used by Automerge)
+
+A system can encode any information desired in the string; as long as it is unique at each point in time.
+
+At any single point in time, there is a single version of the state.
+
+##### Merges
+
+Not all versions need to be publicly broadcast—peers can reconstruct any *merge* version using the information in its parents and its merge type. Therefore, peers only need to broadcast versions that contain *edits*. Once a peer sees both of these edits, their strands rejoin in a *merge*. Until the observing peer makes an edit, this merge is implicit. When a new edit is made on top of these, the split versions are the *parents* of this new version, and this new version "locks in" the merge.
+
+### Patches
+
+----
+
+The Braid model represents the expansion and compression of space over time with three sets of objects:
  - **Versions** define points in time, irrespective of space
  - **Locations** define points of space, irrespective of time
  - **Patches** replace regions of space, across spans of time
@@ -71,25 +119,14 @@ Each *patch* is a colored region in the braid, that replaces a region of state w
 
 <img width=180 src="https://invisible.college/braid/images/dogbirds-braid.png">
 
-Time goes downward. Over time, you can follow locations in space, like threads of hair, as they branch, re-order, and merge back together again, just like a [braid](https://en.wikipedia.org/wiki/Braid_group).
+Time goes downward. Over time, you can follow locations in space, like threads of hair, as they branch, re-order, and merge back together again, just like a braid.
 Each patch replaces a region of space. Each peer's patches have a different color. Grey regions are mergers.
 
 [Click here to see complex braids in action.](/demo)
 
-#### The Time DAG represents forks and merges over time
-
-If we ignore space, we see just the Time DAG:
-
-<img width=100 src="https://invisible.college/braid/images/dogbirds-time.png">
-
-When two peers edit the same version of state, time forks into a DAG. Time on a network is ambiguous—it is impossible to say which version came first. Thus, the two versions exist in parallel in the DAG.
-
-When peers communicate their edits, time merges.
-
 <!-- Note: every change includes mergers AND an edit patch. This way if you get N merges, you put them all together, rather than having to depend on an associative rule for choosing which go together first and second ... you only choose which N constitute a single merge on each edit, cause that's what goes across the network, cause that's all the info that HAS to go across the network. -->
 
-#### The *Space DAG* represents conflicts as forks in space
-If two peers edit the same region of space:
+### Merge Types
 
 <img width=180 src="https://invisible.college/braid/images/dogbirds-fork.png">
 
@@ -97,25 +134,21 @@ then *space forks* into two:
 
 <img width=250 src="https://invisible.college/braid/images/dogbirds-space.png">
 
-When reading from left-to-right, space forks into a bubble of two options. It is ambiguous if one comes first. One says "dog", and in the other, "bird", but the string unambiguously ends with "s".
-
-The space DAG represents ambiguity *without* saying how to resolve it.
-
-Different application want to resolve conflicts in different ways. For instance, strings in a collaborative text editor will want to merge clobbering edits by inserting everything typed, and deleting everything deleted, and breaking ordering ties arbitraliy; but if two debits to a bank account balance occur in parallel, we will want to merge the debits by *adding* the differences together.
-
-#### A *Resolver* defines how to flatten bubbles in space
-
 For all peers to synchronize, they just need to resolve these bubbles in space in the same way. Thus, we make sure each peer uses the same *resolver* function, for the same region of space. In this case, the resolver has arbitrarily (but consistently) chosen "dog" to come before "bird":
 
 <img width=180 src="https://invisible.college/braid/images/dogbirds-resolve.png">
 
-In this example, the resolver simply placed both versions into the resulting string, with a particular order. But the output of a general resolver is arbitrary—a resolver could theoretically read two edited strings in english with NLP, and merge their intent, adjusting syntax and grammar along the way, as long as it did so consistently and deterministically.
+>rewrite this in the language of merge types
+
+Different applications want to resolve conflicts in different ways. For instance, strings in a collaborative text editor will want to merge clobbering edits by inserting everything typed, and deleting everything deleted, and breaking ordering ties arbitrarily; but if two debits to a bank account balance occur in parallel, we will want to merge the debits by *adding* the differences together.
+
+In this example, the resolver simply placed both versions into the resulting string, with a particular order. But the output of a general resolver is arbitrary—a resolver could theoretically read two edited strings in English with NLP, and merge their intent, adjusting syntax and grammar along the way, as long as it did so consistently and deterministically.
 
 In the protocol, each piece of state can specify its resolver function, like a *type*. Each field on an object can have a different resolver type. As long as all peers obey the specified resolvers, they will converge to a consistent result.
 
-Note that in practice, a synchronizer's resolver might not actually be implemented as modular function. Real-world OT systems bake resolution into their transformation steps, and CRDTs bake it into their data structures and read functions. However, no matter the structure of their internal code, any system can *specify* its resolution strategy abstractly as a resolver, as a standard way to describe how to interoperate with it. Resolvers specify the protocol; not the implementation.
+Note that in practice, a synchronizer's resolver might not actually be implemented as a modular function. Real-world OT systems bake resolution into their transformation steps, and CRDTs bake it into their data structures and read functions. However, no matter the structure of their internal code, any system can *specify* its resolution strategy abstractly as a resolver, as a standard way to describe how to interoperate with it. Resolvers specify the protocol; not the implementation.
 
-#### Braid generalizes the OT and CRDT paradigms
+### Braid generalizes the OT and CRDT paradigms
 
 The Braid allows us to map Space, Time, and Patches amongst one another. From this general view, we can see the OT and CRDT paradigms as special cases:
 
@@ -126,7 +159,11 @@ The Braid allows us to map Space, Time, and Patches amongst one another. From th
 
 In practice, an OT system satisfying the TP2 property looks a lot like a CRDT; and CRDTs with historical pruning and rebased edits look like OT systems. (In future work, we will map both systems to the standard Braid model to show where they are implementing the same algorithms.)
 
-Because existing synchronization algorithms can be expressed in the braid model, it turns out that we can also express their messages within the braid protocol. The messages for OT and CRDT systems can be transformed into braid messages, and vice-versa. This makes the braid protocol a good candidate for a standard, like HTTP.
+> We've already done work mapping OT into Braid, we should talk about that
+
+Thus, the Braid protocol allows any peer to implement a different OT or CRDT algorithm, with a different set of tradeoffs in performance, as long as they agree on a model of how they *resolve* conflicting changes.
+
+Because existing synchronization *models* can be expressed in the braid model, it turns out that we can also express the network messages of existing *algorithms* within the braid protocol. The messages for OT and CRDT systems can be transformed into braid messages, and vice-versa. This makes the braid protocol a good candidate for a standard, like HTTP.
 
 ## The Braid Extension to HTTP
 
@@ -204,7 +241,7 @@ It turns out that a GET response message has the same effect on a peer as a SET 
 
 ## Protocol Messages
 
-Messages are sent over the websocket encoded as JSON. There are four basic messages:
+Messages are sent over the Websocket encoded as JSON. There are four basic messages:
 
 ```
 {get: "path"}
@@ -267,7 +304,7 @@ Finally, ACK messages can be introduced to tell the sender when their version ha
 {ack: "path", version: "ax937"}
 ```
 
-> Todo: specify resolver in network messages
+> TODO: specify resolver in network messages
 
 #### Versioning example
 
@@ -413,7 +450,9 @@ Braid is made backwards-compatible in 3 ways:
     - Everything can be represented as replace
   - When two things edit the same region, space is a DAG
 
-So time and space are both relative.  But any CPU or human operates with a thread.  Whenever we have multiple threads, there's no objective ordering of time and space, so to synchronize, we can use DAGs for both.
+So time and space are both relative.  But any CPU or human operates with a
+thread.  Whenever we have multiple threads, there's no objective ordering of
+time and space, so to synchronize, we can use DAGs for both.
 
 ### URLs
   - URLs are arbitrary string paths
@@ -438,20 +477,25 @@ So time and space are both relative.  But any CPU or human operates with a threa
   - We think in "State", rather than "Actions"
     - This is the same difference as REST vs. RPC
     - We can capture an action with a diff
-    - That way there's less coupling -- even middleware can host state without knowing the semantics of the app
-    - We can also attach a name to a diff, optionally, to augment it with any specific semantics necessary to an app that needs it.
+    - That way there's less coupling -- even middleware can host state without
+      knowing the semantics of the app
+    - We can also attach a name to a diff, optionally, to augment it with any
+      specific semantics necessary to an app that needs it.
   - We Represent changes with diffs
     - This both makes network messages smaller
     - And allows for merging changes
     - If two things change at the same time, we need a resolver
-  - We handle conflicts with a Resolver
+  - Re handle conflicts with a Resolver
     - This is instead of a totally different datatype
     - Or instead of different actions, with custom merge semantics
-    - This abstracts away the core intrinsic difference between synchronizers: how they resolve conflicts
+    - This abstracts away the core intrinsic difference between synchronizers:
+      how they resolve conflicts
       - All other resolutions are unambiguous.
   - We coordinate pruning history with acknowledgements
-    - Some systems say when to delete, or infer that someone has received something
-    - But in any system, the underlying need for state is to sync when someone reconnects -- the "fork point"
+    - Some systems say when to delete, or infer that someone has received
+      something
+    - But in any system, the underlying need for state is to sync when someone
+      reconnects -- the "fork point"
       - And if everyone always adds to the newest versions, everyone can delete old ones
     - So we just ack those, and know that we will only add history to the end.
 
