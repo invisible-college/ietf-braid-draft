@@ -10,52 +10,70 @@ However, there is no standard way to synchronize. Instead, programmers write the
 
 <img src="https://invisible.college/braid/images/the-whole-stack2.png" style="max-width: 650">
 
-
-
-This non-standard code is necessary to connect a database with a UI, across a network, and keep multiple clients and servers synchronized. But it is a pain to program, and the resulting internal state of the application becomes proprietary and difficult for other websites to access. A standard protocol for synchronizing internal state could simultaneously make web programming both (1) easier and (2) more open.
+This non-standard code is a pain to write; partially because it involves a lot of boilerplate connections between non-standard APIs, and partially because it needs to ensure they all stay *synchronized* as state changes in any of them, and synchronization is an inherently difficult problem.
 
 ### Synchronization
 
-*Synchronization* is a general problem that occurs whenever two or more computers or threads access the same state. Synchronization code is tricky to write. It can result in clobbers, corruptions, and race conditions.
+*Synchronization* is a general problem that occurs whenever two or more computers or threads access the same state. (In this case, multiple clients and servers, or multiple threads within each client or server.) Synchronization code is tricky to write. It can result in clobbers, corruptions, and race conditions. A good synchronizer ensures that changes propagate completely, and that caches invalidate, even as networks disconnect, and multiple computers make conflicting edits to the same state.
 
 Luckily, a set of maturing synchronization technologies (such as Operational Transform and CRDTs) can now automate and encapsulate synchronization within a library. They can synchronize arbitrary JSON data structures across an arbitrary set of computers that make arbitrary mutations, and consistently merge their edits into a valid result, without a central server, in the face of arbitrary network delays and dropouts. In other words, it is now possible to interact with state stored anywhere on a network as if it is a local variable, and program as if it is already downloaded and always up-to-date.
 
-#### HTTP + Synchronization
+### Standard synchronization improves HTTP
 
-Braid puts these technologies into HTTP, to standardize them. HTTP's URLs and requests provide a standard vocabulary for reading and writing state. Braid extends them with the power of Operational Transform and CRDTs.
+The task remains to standardize this synchronization technology. Every existing synchronizer implements a different API and network protocol, and resolves conflicting edits in a different way.
+
+Braid proposes a common language for synchronizers, so that they can interoperate, and embeds it as an extension to HTTP. The existing HTTP and REST architecture already provides a vocabulary of URLs and GET, PUT and POST methods for reading and writing state at them. However, HTTP and REST only provide state *transfer*, not *synchronization*:
+
+<p style="margin-left: 40">
+HTTP: HyperText **Transfer** Protocol  
+REST: REpresentational State **Transfer**
+</p>
+
+Braid extends HTTP and REST into synchronization protocols with the full power of Operational Transform and CRDTs, providing the advantages of cutting-edge synchronization technology for the entire web.
 
 #### New features for the web
 
-By building support for synchronization technologies into HTTP, we solve a number of the Web's outstanding problems in caching, networking, and programming:
+These technologies provide powerful features to websites, solving a number of the Web's outstanding problems in networking and caching:
 
 - Caches update automatically and instantly, because servers promise to push changes to their subscribers. This obsoletes the `cache-control` and `refresh` headers, and the `max-age` heuristic. Users never need to force-clear their cache.
 - Updates go over the network as diffs, which can be much smaller than the resources they modify, making network usage much more efficient.
+- Web apps get an offline mode for free. Edits from multiple clients merge automatically once they come online. Network failures recover transparently.
 - *Reload* buttons in browsers become unnecessary, and can be removed for braid sites. Browsers automatically discover and display the most recent version on their own.
 - Web apps require roughly 70% less code to build (in our experiments), because programmers do not need web frameworks or custom logic to wire together a stack of server-state and client-state. This work is automated by the protocol.
 - Every `<textarea>` becomes a collaborative editor (like Google Docs) by default.
-- Web apps get an offline mode for free. Edits from multiple clients merge automatically once they come online. Network failures recover transparently.
 - Servers become optional. Many web apps can function without a server, because peers can synchronize with one another directly over the protocol.
 
-#### Standardizing the insides of websites opens them up
+#### An open standard for the insides of websites
 
 This makes the internal state of websites open, distributed, and shareable. Whereas HTTP gives each *page* a URL, braid gives each *internal datum* a URL, and makes it as easy to synchronize with (and thus reuse) another site's internal data as linking to a webpage is today. You can program with another site's internal data as if it were a local variable in memory, already downloaded and always up-to-date. This enables a web of connected, linked, synchronized data to develop as an alternative to the centralized websites we see today, just as a web of pages has grown to replace the centralized networks (AOL, Compuserve, Prodigy) of the 1990s.
 
-<br><img src="https://invisible.college/braid/images/aol-to-braid.png" width=600><br><br>
+<br><img src="https://invisible.college/braid/images/aol-to-braid-vert.svg" width=500 style="margin-left:50"><br><br>
+
+#### Separating UI from State
+
+When an application's entire state is on the braid, any user interface can synchronize with it in a standard way, and it becomes easy to mix-and-match UIs and state. You can incorporate state from another website into your own website. You can write a new user interface for an existing website's state. You can create new state, to develop new features. You can share the new UI with your friends, so they can use the new features. Then they can share it, and grow a new userbase for the new features.
 
 We have a working prototype of the Braid protocol, and have deployed it with production websites. This document describes the new protocol, how it differs from prior versions of HTTP, and a plan to deploy it in a backwards-compatible way, where web developers can opt into the new synchronization features without breaking the rest of the web.
 
-## The Braid Spacetime Model
+## A Common Model for Synchronization
 
 Even though there are many synchronizers, it is possible for them to communicate in a common language, with a common set of concepts. Different synchronizers use different data structures internally, and have different network messages-- however, the *information* they send can all be represented in a common language, using a common set of concepts:
 
  - **Versions** define points in time, irrespective of space
  - **Locations** define points of space, irrespective of time
  - **Patches** replace regions of space, across spans of time
- - **Merges Type** define how to merge edits at the same location
 
-Within these concepts, there are many ways to express each one. This section explains a proposal for each, and gives the reasons for its design.
+These three concepts are enough to represent any type of change to a JSON data structure. To prove this, we have implemented network translators for two popular synchronizers into this common model, and made them interoperable.
 
-This design strives to make simple synchronizers easy, and complex synchronizers possible. Some synchronizers are simple to write, but lack features. Some features require more complex implementations. Our common language must allow different synchronizers to communicate.
+However, synchronizers also differ in how they *merge* changes to the same region of state. These differences can be captured as a *merge type*:
+
+ - **Merges Types** define how edits to the same location resolve
+
+If a synchronizer expresses state changes using versions, locations, and patches, and specifies its merge types, then it can synchronize with any other braid synchronizer implementing the same merge types, no matter their internal implementation.
+
+Finally, synchronizers also broadcast *acknowledgements* of the versions they have received, in order to tell their peers that they have moved forward in time, and will no longer refer to old history when sending patches. This allows their peers to prune their history logs, and free up unused memory:
+
+ - **Acknowledgements** allow peers to prune history and save memory
 
 ### Versions
 
@@ -100,6 +118,12 @@ At any single point in time, there is a single version of the state.
 Not all versions need to be publicly broadcast—peers can reconstruct any *merge* version using the information in its parents and its merge type. Therefore, peers only need to broadcast versions that contain *edits*. Once a peer sees both of these edits, their strands rejoin in a *merge*. Until the observing peer makes an edit, this merge is implicit. When a new edit is made on top of these, the split versions are the *parents* of this new version, and this new version "locks in" the merge.
 
 ### Patches
+
+
+### Alternative designs
+Within these concepts, there are many ways to express each one. This section explains a proposal for each, and gives the reasons for its design.
+
+This design strives to make simple synchronizers easy, and complex synchronizers possible. Some synchronizers are simple to write, but lack features. Some features require more complex implementations. Our common language must allow different synchronizers to communicate.
 
 ----
 
