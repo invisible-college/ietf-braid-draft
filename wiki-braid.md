@@ -12,13 +12,13 @@ However, there is no standard way to synchronize. Instead, programmers write the
 
 This non-standard code is a pain to write; partially because it involves a lot of boilerplate connections between non-standard APIs, and partially because it needs to ensure they all stay *synchronized* as state changes in any of them, and synchronization is an inherently difficult problem.
 
-### Synchronization
+#### Synchronization
 
-*Synchronization* is a general problem that occurs whenever two or more computers or threads access the same state. (In this case, multiple clients and servers, or multiple threads within each client or server.) Synchronization code is tricky to write. It can result in clobbers, corruptions, and race conditions. A good synchronizer ensures that changes propagate completely, and that caches invalidate, even as networks disconnect, and multiple computers make conflicting edits to the same state.
+*Synchronization* is a general problem that occurs whenever two or more computers or threads access the same state. It results in clobbers, corruptions, and race conditions if done poorly. A good synchronizer ensures that all computers or threads reach consistent states, where changes propagate completely, and caches invalidate, even as networks disconnect, and multiple computers make conflicting edits to the same state. Synchronization code is tricky to write, and web programmers typically only implement partial solutions when synchronizing their clients and servers.
 
 Luckily, a set of maturing synchronization technologies (such as Operational Transform and CRDTs) can now automate and encapsulate synchronization within a library. They can synchronize arbitrary JSON data structures across an arbitrary set of computers that make arbitrary mutations, and consistently merge their edits into a valid result, without a central server, in the face of arbitrary network delays and dropouts. In other words, it is now possible to interact with state stored anywhere on a network as if it is a local variable, and program as if it is already downloaded and always up-to-date.
 
-### Standard synchronization improves HTTP
+### HTTP can standardize synchronization
 
 The task remains to standardize this synchronization technology. Every existing synchronizer implements a different API and network protocol, and resolves conflicting edits in a different way.
 
@@ -29,7 +29,7 @@ HTTP: HyperText **Transfer** Protocol
 REST: REpresentational State **Transfer**
 </p>
 
-Braid extends HTTP and REST into synchronization protocols with the full power of Operational Transform and CRDTs, providing the advantages of cutting-edge synchronization technology for the entire web.
+Braid extends HTTP and REST into synchronization protocols with the full power of Operational Transform and CRDTs, providing synchronization for the world-wide web.
 
 #### New features for the web
 
@@ -55,15 +55,15 @@ When an application's entire state is on the braid, any user interface can synch
 
 We have a working prototype of the Braid protocol, and have deployed it with production websites. This document describes the new protocol, how it differs from prior versions of HTTP, and a plan to deploy it in a backwards-compatible way, where web developers can opt into the new synchronization features without breaking the rest of the web.
 
-## A Common Model for Synchronization
+## Braid's Common Model for Synchronization
 
-Even though there are many synchronizers, it is possible for them to communicate in a common language, with a common set of concepts. Different synchronizers use different data structures internally, and have different network messages-- however, the *information* they send can all be represented in a common language, using a common set of concepts:
+Even though there are many synchronizers, it is possible for them to communicate in a common language. Different synchronizers use different data structures internally, and have different network messages-- however, the *information* they send can all be represented with a common set of concepts:
 
  - **Versions** define points in time, irrespective of space
  - **Locations** define points of space, irrespective of time
  - **Patches** replace regions of space, across spans of time
 
-These three concepts are enough to represent any type of change to a JSON data structure. To prove this, we have implemented network translators for two popular synchronizers into this common model, and made them interoperable.
+These three concepts are enough to represent any type of change to a JSON data structure. (We have verified this by translating the network messages of ShareDB and Automerge into these concepts and they still work.)
 
 However, synchronizers also differ in how they *merge* changes to the same region of state. These differences can be captured as a *merge type*:
 
@@ -73,57 +73,94 @@ If a synchronizer expresses state changes using versions, locations, and patches
 
 Finally, synchronizers also broadcast *acknowledgements* of the versions they have received, in order to tell their peers that they have moved forward in time, and will no longer refer to old history when sending patches. This allows their peers to prune their history logs, and free up unused memory:
 
- - **Acknowledgements** allow peers to prune history and save memory
+ - **Acknowledgements** of versions allow peers to prune historical memory
 
-### Versions
+The rest of this section explains how these concepts work together.
 
-All synchronizers need to keep track of *time*, to record when state changes happen, but they use many different methods to represent it, such as vector clocks (automerge), incrementing version numbers (sharedb), and hashes (git).
+### *Versions* form a DAG of Time
 
-Each change marks a *version*. A version is a single point in time.
+A version marks a single point in time, for which a resource has a single, fixed value.
 
-A basic version for the `hello-world` state looks like this:
-```
-{
-  key: "hello-world",
-  val: "Hello, world!",
-  version: "helwjfoj",
-  parents: ["82h23", "ajwe3"]
-}
-```
+We normally think of time as a line. However, if the same state is edited simultaneously on multiple computers over a network, it can be impossible to know which edit happened first, and the order of time becomes ambiguous.
 
-#### Time is a DAG
-
-We normally think of time as a line. This tells you the ordering of all edits. However, if a state is copied over a network, it will take time for it to arrive on the new peer. And if both peers then *edit* the state, there will be no way to know which edit happened first. Time will then fork in two:
+Some synchronizers deal with this ambiguity by restricting concurrency. Some represent time using vector clocks. The general model of time is as a DAG, where each version, at a point in time, can have multiple parents:
 
 <img width=100 src="https://invisible.college/braid/images/dogbirds-time.png">
 
-There is no way to tell which of the middle red or blue events came first. So these events happen side-by-side.
+Versions are represented as opaque (but unique) strings. You can represent anything in them (numbers, version vectors, hashes) by just serializing them as a string. All that matters for the braid protocol is that each version's string is unique.
 
-In the DAG, each version has multiple parents.
+```
+"1"            # Version 1 (a global number)
+"3_93          # Version 93 from peer 3
+"x823h234"     # A hash, or random string
+"[2,5,0,5]"    # A version vector
+```
 
-#### Versions are unique IDs
+### *Locations* specify where edits take place
 
-In the common language, each version is expressed as a unique, but otherwise arbitrary string. Here are three example versions:
+A *location* is a point in space, irrespective of time. The index of a location might change over time, as characters are inserted or deleted before it, but the location should remain identifiable across versions.
 
- - `2wj256ie8fs8`
- - `3` (used by ShareDB)
- - `{ClientA: 4, ClientB: 3, ClientC: 7, ClientX: 3}` (used by Automerge)
+Different synchronizers specify edits in different ways:
+ 1. OT systems specify a version+index. To map the location to a new version, they *transform* the index.
+ 2. CRDTs give a unique ID to each location, which follows the location throughout time.
+ 3. Git guesses the location of edits between any two versions, by running a diff algorithm.
 
-A system can encode any information desired in the string; as long as it is unique at each point in time.
+We use approach (1) in the network messages. CRDT systems can then translate a version+index into a unique ID internally, if desired.
 
-At any single point in time, there is a single version of the state.
+> **Move to design rationale:** Approaches (1) and (2) provide the same information, but have a few tradeoffs. We use approach (1) for the braid protocol, because:
+ - Indices are easier for humans to understand than IDs, *e.g.* `foo[3] = "h"` vs. `xh929h23h23ihwwenr5 = "h"`
+ - Indices require less space in the network messages than location IDs
 
-##### Merges
+Locations specify the start and end positions of patches.
 
-Not all versions need to be publicly broadcast—peers can reconstruct any *merge* version using the information in its parents and its merge type. Therefore, peers only need to broadcast versions that contain *edits*. Once a peer sees both of these edits, their strands rejoin in a *merge*. Until the observing peer makes an edit, this merge is implicit. When a new edit is made on top of these, the split versions are the *parents* of this new version, and this new version "locks in" the merge.
+### *Patches* specify state changes
 
-### Patches
+Each *patch* is a colored region in a braid, that replaces a region of state with something new:
 
+<img width=180 src="https://invisible.college/braid/images/dogbirds-braid.png">
+
+Time goes downward. Over time, you can follow locations in space, like threads of hair, as they branch, re-order, and merge back together again, just like a braid.
+Each patch replaces a region of space. Each peer's patches have a different color. Grey regions are mergers.
+
+[Click here to see complex braids in action.](/demo)
+
+All patches are *replace* operations. Insertions are implemented as replacing a zero-length region with a non-zero-length region, and deletes replace a non-zero length region with a zero-length one.
+
+```
+.foo[0].bar = null       # Replace obj.foo[0].bar = null
+[3:3] = "asdf"           # Insert the string 'asdf' at index 3 of a string. Illegal if array.
+[3] = "a"                # Set char 3 of string to 'a'; or element 3 of array to 'a'
+[3] = "asdf"             # Illegal if string. If array, set element 3 to 'asdf'
+[3:4] = [1, 3, 5]        # Splice [1,3,5] into array, replacing element 3. Illegal if string.
+[4:4] = [{msg: "hi"}]    # Insert a new message at the end of a chat
+[3:10] = ""              # Delete characters 3-10 in string
+= false                  # Make the whole thing false
+.foo[0].bar = undefined  # Delete obj.foo[0].bar
+```
+
+See the section on *Portals* below to see how future work can implement *moves*, *copies*, and *nested splices* by referring to regions from past versions.
+
+### *Locations* specify the offsets of patches
+
+The indexes on the left-hand side of a patch specify the start and end *locations* of the patch's replacement region. The location is indexed with respect to the merger of all parent versions.
+
+### Merge Types
+
+Mergers are computed differently for different *merge types*. For instance:
+  - Text editing strings
+  - IDs
+  - Counters
+
+...all merge differently.
 
 ### Alternative designs
 Within these concepts, there are many ways to express each one. This section explains a proposal for each, and gives the reasons for its design.
 
 This design strives to make simple synchronizers easy, and complex synchronizers possible. Some synchronizers are simple to write, but lack features. Some features require more complex implementations. Our common language must allow different synchronizers to communicate.
+
+#### Versions can *merge* to create new versions
+
+Not all versions need to be publicly broadcast—peers can reconstruct any *merge* version using the information in its parents and its merge type. Therefore, peers only need to broadcast versions that contain *edits*. Once a peer sees both of these edits, their strands rejoin in a *merge*. Until the observing peer makes an edit, this merge is implicit. When a new edit is made on top of these, the split versions are the *parents* of this new version, and this new version "locks in" the merge.
 
 ----
 
@@ -213,12 +250,12 @@ The rest of this document explains the WebSocket protocol—as implemented in ex
 Braid makes these basic changes to HTTP to add support for synchronization:
 
 1. **Request-Response → Persistent Subscriptions.** Rather than being limited to a single request-response cycle, it maintains persistent subscriptions to changing data by default. When you GET a resource, you also subscribe to future updates, until you issue FORGET.
-2. **Client/server → Symmetric.** These persistent connections allow messages in both directions. Thus, instead of being restricted to client-server relationships, relationships can be peer-to-peer. Either party can initiate a request, rather than just the "client."
+2. **Client/server → Peer-to-peer.** These persistent connections allow messages in both directions. Thus, instead of being restricted to client-server relationships, relationships can be peer-to-peer. Either party can initiate a request, rather than just the "client."
 3. **Opaque Resources** → **Linked JSON.** Rather than each resource consisting of a set of headers and an opaque body, we have added first-class support for structured JSON, along with a structured JSON diff/patch language, and a link format. This allows for synchronizing mutations to structured data, and also allows resources to link to other structured resources elsewhere on the network, enabling a web of data. <!-- Whereas HTTP (mostly) doesn't need to know about HTML—the resource is opaque—braid knows the structure of JSON, and how to splice patches into spatial regions. -->
 4. (Optional) **Stateless → Versioned Patch History.** Whereas each message in HTTP is stateless, and can be interpreted without remembering prior messages, synchronization becomes much more powerful if each peer maintains a version history of past mutations created by it and its peers. This allows a minimal patch to be interpreted within a larger data structure. Although these features are optional, peers can implement them to gain performance enhancements and consistency guarantees. There are five such optional features:
   - Versions
   - Patches
-  - Conflict Resolvers
+  - Merge Types
   - Acknowledgements
   - Hints
 
