@@ -10,7 +10,7 @@ However, there is no standard way to synchronize. Instead, programmers write the
 
 <img src="https://invisible.college/braid/images/the-whole-stack2.png" style="max-width: 650">
 
-This non-standard code is a pain to write; partially because it involves a lot of boilerplate connections between non-standard APIs, and partially because it needs to ensure they all stay *synchronized* as state changes in any of them, and synchronization is an inherently difficult problem.
+As websites have grown more dynamic and data-driven, web programmers have had to write more non-standard code. This code is a pain to write: it requires a lot of boilerplate to wire together non-standard APIs, and has to ensure that all components *synchronize* to the same state—invalidating caches and propagating updates. Synchronization is an inherently difficult problem.
 
 #### Synchronization
 
@@ -91,7 +91,7 @@ Versions are represented as opaque (but unique) strings. You can represent anyth
 
 ```
 "1"            # Version 1 (a global number)
-"3_93          # Version 93 from peer 3
+"3_93"         # Version 93 from peer 3
 "x823h234"     # A hash, or random string
 "[2,5,0,5]"    # A version vector
 ```
@@ -311,6 +311,8 @@ Messages are sent over the Websocket encoded as JSON. There are four basic messa
 {delete: "path"}
 ```
 
+This is the simplest form of braid messages. They are easy to implement, but since they have no versions, parents, patches, or merge types, they do not guarantee consistency across peers.
+
 #### Basic example
 Here is an example session from a client's perspective, where it requests a resource, changes a field on it, and closes the connection:
 
@@ -409,7 +411,7 @@ Versions are represented as opaque (but unique) strings. You can represent anyth
 
 ```
 "1"            # Version 1 (a global number)
-"3_93          # Version 93 from peer 3
+"3_93"         # Version 93 from peer 3
 "x823h234"     # A hash, or random string
 "[2,5,0,5]"    # A version vector
 ```
