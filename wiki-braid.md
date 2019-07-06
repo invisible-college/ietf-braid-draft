@@ -10,13 +10,26 @@ However, there is no standard way to synchronize. Instead, programmers write the
 
 <img src="https://invisible.college/braid/images/the-whole-stack2.png" style="max-width: 650">
 
-As websites have grown more dynamic and data-driven, web programmers have had to write more non-standard code. This code is a pain to write: it requires a lot of boilerplate to wire together non-standard APIs, and has to ensure that all components *synchronize* to the same state—invalidating caches and propagating updates. Synchronization is an inherently difficult problem.
+As websites have grown more dynamic and data-driven, more of their code and state have become non-standard. Today, the bulk of a website's data is proprietary; accessible to only its pages. Although I can *link* to any page on Facebook from my website, it is much more difficult for me to re-use the data that generates a Facebook page to generate my own pages. This also makes programming more difficult, because today's programmers must learn or author different subsystems with different APIs, and coordinate their components to synchronize to the same state. And since synchronization itself is a difficult problem, these non-standard approaches often make compromises, such as requiring network access, central servers, forgoing collaborative editing, or living with page and data reloads when only a small piece of state changes.
+
+<!--**because without being able to rely on certain synchronization behavior, some features are impossible to implement.**-->
+
+> **Note:** Can we now suggest the positive possibility of having a standard that solves these synchronization problems and puts everything out there in an open standard that we can build the insides of websites with? And can we draw an analogy to how the web originally began, by making it easier for people to host their pages than implementing their own protocol, server, and client, and easier to connect with others, and thus growing a large network of a web—but that this network so far only links to the *pages* that are the presented surface of website data, and now that the insides have grown so much, we can now write the new standards to catch up to the needs of the modern web and unleash a huge new open world-wide collaboration?
+
+It is time for us to make a good standard. This comes down to synchronization, which is hard.
 
 #### Synchronization
 
+> **Note:** This section can say that the community has been solving synchronization in individual systems. But there isn't any standard protocol yet. And we have some of the authors of these systems on board to come up with a standard protocol. And it is only natural to put this into the web, to extend HTTP and REST, so that any state can be *synchronized* with it, and use this to extend the web standards to provide support for opening the insides of websites as well.
+
 *Synchronization* is a general problem that occurs whenever two or more computers or threads access the same state. It results in clobbers, corruptions, and race conditions if done poorly. A good synchronizer ensures that all computers or threads reach consistent states, where changes propagate completely, and caches invalidate, even as networks disconnect, and multiple computers make conflicting edits to the same state. Synchronization code is tricky to write, and web programmers typically only implement partial solutions when synchronizing their clients and servers.
 
+ - There are actually a few HTTP features that try, but don't work well enough. (Patch, etags, cache-control.)
+ - But there are some good synchronizers now on the cutting edge
+
 Luckily, a set of maturing synchronization technologies (such as Operational Transform and CRDTs) can now automate and encapsulate synchronization within a library. They can synchronize arbitrary JSON data structures across an arbitrary set of computers that make arbitrary mutations, and consistently merge their edits into a valid result, without a central server, in the face of arbitrary network delays and dropouts. In other words, it is now possible to interact with state stored anywhere on a network as if it is a local variable, and program as if it is already downloaded and always up-to-date.
+
+- And we have made a generalized synchronizer. It can connect radically different approaches together.
 
 ### HTTP can standardize synchronization
 
@@ -45,6 +58,8 @@ These technologies provide powerful features to websites, solving a number of th
 
 #### An open standard for the insides of websites
 
+> **Note:** This might become an argument for how we will grow a new distributed open web to outcompete the existing monopolies. That we might not persuade the existing monopolies to change their ways and find new business models (like Aol), but we can develop our own pages, for our own needs, and yet by building them on this platform, build them together into something good. Like we can build our own personal websites, or blogs, and link them together so that they become news feeds of other people's sites, and supporting realtime edits, like chat, with realtime notifications, providing the same functionality as facebook, for the group of people building profiles this way.
+
 This makes the internal state of websites open, distributed, and shareable. Whereas HTTP gives each *page* a URL, braid gives each *internal datum* a URL, and makes it as easy to synchronize with (and thus reuse) another site's internal data as linking to a webpage is today. You can program with another site's internal data as if it were a local variable in memory, already downloaded and always up-to-date. This enables a web of connected, linked, synchronized data to develop as an alternative to the centralized websites we see today, just as a web of pages has grown to replace the centralized networks (AOL, Compuserve, Prodigy) of the 1990s.
 
 <br><img src="https://invisible.college/braid/images/aol-to-braid-vert.svg" width=500 style="margin-left:50"><br><br>
@@ -55,7 +70,7 @@ When an application's entire state is on the braid, any user interface can synch
 
 We have a working prototype of the Braid protocol, and have deployed it with production websites. This document describes the new protocol, how it differs from prior versions of HTTP, and a plan to deploy it in a backwards-compatible way, where web developers can opt into the new synchronization features without breaking the rest of the web.
 
-## Braid's Common Model for Synchronization
+## A Common Model for Synchronization
 
 Even though there are many synchronizers, it is possible for them to communicate in a common language. Different synchronizers use different data structures internally, and have different network messages-- however, the *information* they send can all be represented with a common set of concepts:
 
