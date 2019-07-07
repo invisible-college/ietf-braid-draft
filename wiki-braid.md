@@ -12,15 +12,9 @@ Unfortunately, there is no standard way to synchronize. Instead, programmers wri
 
 As the web becomes more dynamic and data-driven, the complexity of these non-standard Javascript stacks grows, and an increasing amount of data is inaccessible to the open web. The result is a web which is open on the surface, but closed internally: websites can link to each other's *pages*, but cannot easily share each other's internal *state*.
 
-<!--As websites become more dynamic and data-driven, more of their code and state become non-standard. Today, many websites' internal data are proprietary—accessible to only them—even though they have HTML views of the same data that are open on the public web. I can *link* to any page on Facebook from my website, but it is much more difficult for me to re-use the data that generates a Facebook page to generate my own pages. These layers of non-standard code also pose a programming burden for developing a *single* website, because programmers must learn or author multiple layers, with multiple APIs, and coordinate their components to synchronize to the same state. And since synchronization itself is a difficult problem, these non-standard approaches often make compromises, such as requiring network access, central servers, forgoing collaborative editing, or living with page and data reloads when only a small piece of state changes. -->
-
 We have a prototype solution we call the "braid". It generalizes HTTP into an API that can synchronize the dynamic insides of websites.  You program by putting all your state onto the braid, and then it becomes accessible anywhere, and realtime synchronized by default.
 
 The braid protocol is a few opt-in changes to HTTP, each of which provides a different set of abilities. We implemented it as a Javascript polyfill library that works in existing web browsers and servers.
-
-> **Note:** Can we now suggest the positive possibility, that we are building a standard that solves these synchronization problems and puts everything out there in an open standard that we can build the insides of websites with? And can we draw an analogy to how the web originally began, by making it easier for people to host their pages than implementing their own protocol, server, and client, and easier to connect with others, and thus growing a large network of a web—but that this network so far only links to the *pages* that are the presented surface of website data, and now that the insides have grown so much, we can now write the new standards to catch up to the needs of the modern web and unleash a huge new open world-wide collaboration?
-
-It is time for us to make a good standard. This comes down to synchronization, which is hard.
 
 #### Synchronization
 
