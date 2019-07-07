@@ -4,17 +4,21 @@
 
 ## Introduction
 
-HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just state transfer.
+HTTP was initially designed to transfer static pages. If a page changes, it is the client's responsibility to issue another GET request. This made sense when pages were static and written by hand. However, today's websites are dynamic, generated from databases, and continuously mutate as their state changes. Now we need state synchronization, not just state transfer.
 
-However, there is no standard way to synchronize. Instead, programmers write their own code outside the standards, to wire together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks. The task of connecting a UI with data is one that every dynamic website has to do, but there is no standard way to do it.
+Unfortunately, there is no standard way to synchronize. Instead, programmers write non-standard code; wiring together custom protocols over WebSockets and long-polling XMLHTTPrequests with stacks of Javascript frameworks. The task of connecting a UI with data is one that every dynamic website has to do, but there is no standard way to do it.
 
-<img src="https://invisible.college/braid/images/the-whole-stack2.png" style="max-width: 650">
+<img src="https://invisible.college/braid/images/the-whole-stack4.png" style="max-width: 700; margin: 15 0">
 
-As websites have grown more dynamic and data-driven, more of their code and state have become non-standard. Today, the bulk of a website's data is proprietary; accessible to only its pages. Although I can *link* to any page on Facebook from my website, it is much more difficult for me to re-use the data that generates a Facebook page to generate my own pages. This also makes programming more difficult, because today's programmers must learn or author different subsystems with different APIs, and coordinate their components to synchronize to the same state. And since synchronization itself is a difficult problem, these non-standard approaches often make compromises, such as requiring network access, central servers, forgoing collaborative editing, or living with page and data reloads when only a small piece of state changes.
+As the web becomes more dynamic and data-driven, the complexity of these non-standard Javascript stacks grows, and an increasing amount of data is inaccessible to the open web. The result is a web which is open on the surface, but closed internally: websites can link to each other's *pages*, but cannot easily share each other's internal *state*.
 
-<!--**because without being able to rely on certain synchronization behavior, some features are impossible to implement.**-->
+<!--As websites become more dynamic and data-driven, more of their code and state become non-standard. Today, many websites' internal data are proprietary—accessible to only them—even though they have HTML views of the same data that are open on the public web. I can *link* to any page on Facebook from my website, but it is much more difficult for me to re-use the data that generates a Facebook page to generate my own pages. These layers of non-standard code also pose a programming burden for developing a *single* website, because programmers must learn or author multiple layers, with multiple APIs, and coordinate their components to synchronize to the same state. And since synchronization itself is a difficult problem, these non-standard approaches often make compromises, such as requiring network access, central servers, forgoing collaborative editing, or living with page and data reloads when only a small piece of state changes. -->
 
-> **Note:** Can we now suggest the positive possibility of having a standard that solves these synchronization problems and puts everything out there in an open standard that we can build the insides of websites with? And can we draw an analogy to how the web originally began, by making it easier for people to host their pages than implementing their own protocol, server, and client, and easier to connect with others, and thus growing a large network of a web—but that this network so far only links to the *pages* that are the presented surface of website data, and now that the insides have grown so much, we can now write the new standards to catch up to the needs of the modern web and unleash a huge new open world-wide collaboration?
+We have a prototype solution we call the "braid". It generalizes HTTP into an API that can synchronize the dynamic insides of websites.  You program by putting all your state onto the braid, and then it becomes accessible anywhere, and realtime synchronized by default.
+
+The braid protocol is a few opt-in changes to HTTP, each of which provides a different set of abilities. We implemented it as a Javascript polyfill library that works in existing web browsers and servers.
+
+> **Note:** Can we now suggest the positive possibility, that we are building a standard that solves these synchronization problems and puts everything out there in an open standard that we can build the insides of websites with? And can we draw an analogy to how the web originally began, by making it easier for people to host their pages than implementing their own protocol, server, and client, and easier to connect with others, and thus growing a large network of a web—but that this network so far only links to the *pages* that are the presented surface of website data, and now that the insides have grown so much, we can now write the new standards to catch up to the needs of the modern web and unleash a huge new open world-wide collaboration?
 
 It is time for us to make a good standard. This comes down to synchronization, which is hard.
 
@@ -68,9 +72,59 @@ This makes the internal state of websites open, distributed, and shareable. Wher
 
 When an application's entire state is on the braid, any user interface can synchronize with it in a standard way, and it becomes easy to mix-and-match UIs and state. You can incorporate state from another website into your own website. You can write a new user interface for an existing website's state. You can create new state, to develop new features. You can share the new UI with your friends, so they can use the new features. Then they can share it, and grow a new userbase for the new features.
 
+> **Note:** Can we say here that you can use the same methods of the network protocol (get and set) for internal state as well? We extend REST with synchronization, and functionally-generated state, so that GET will get one and subscribe, which makes the insides of a website like a spreadsheet, where you edit any one and it updates the rest.... *AND* --> then you can access state on any other site over the network as easily as a local variable.
+>
+> Maybe a simpler way to do that is to just show some example code and say that it works:
+> ```
+> state.x
+> state['/foo']
+> state['https://foo.com/bar]
+> ```
+> And then I can make the point about this working by collapsing time and space, using a trick of synchronization, if needed.
+
 We have a working prototype of the Braid protocol, and have deployed it with production websites. This document describes the new protocol, how it differs from prior versions of HTTP, and a plan to deploy it in a backwards-compatible way, where web developers can opt into the new synchronization features without breaking the rest of the web.
 
-## A Common Model for Synchronization
+## Proposed Changes to HTTP
+
+### Changes to networking
+
+Whereas HTTP is explicitly client/server, Braid is capable of running peer-to-peer.
+
+To do this, it generalizes the explicit request/response pattern of HTTP into a set of common messages, opened over a persistent encrypted connection.
+
+#### Subscriptions
+
+Instead of just *getting* state at a snapshot of time, a Braid client also *subscribes* to future changes:
+
+| HTTP method  | Braid method  | What's new |
+| --------- | ------- | -----| 
+| Get | Get | Also subscribes to future updates |
+|  | Forget | Ends a "Get" subscription |
+| Put/Post/Patch | Set | Also updates all subscribers |
+| Delete | Delete | Also updates all subscribers |
+
+This requires only minimal changes to HTTP's semantics. Programmers can thus reuse most of their knowledge from HTTP when building Braid applications. There is one new method, `forget`, which is usually issued by automatically by Braid libraries rather than programmers. Finally, Braid unifies the `put`, `post`, and `patch` methods in to a single `set` method, which is able to both create state and change state, and can optionally do so with a patch, as is explained below.
+
+#### Generalized request/response
+Whereas HTTP messages are either a *request* or *response* in a client-initiated connection, braid messages can be initiated by either peer.
+
+| HTTP  | Braid | Meaning |
+| ------------- |    ------------ | ------ |
+|   Get Request |      Get message | "I want this" |
+|   Get Response |      Set message | "This is the current version" |
+|   Put Request |       Set message | "This is the current version" |
+|   Put Response |      Ack message | "I accept this version" |
+
+
+Note that a Braid peer responds to a GET with a SET, whereas HTTP has an explicit *response* block.
+It turns out that a GET response message has the same effect on a peer as a SET request message— both set the state on the recipient.
+
+### Synchronous, linked JSON
+
+
+
+### Versioning
+Optional. Makes simple synchronizers easy, and complex synchronizers possible. Can mix and match features, in different combinations, for different applications.
 
 Even though there are many synchronizers, it is possible for them to communicate in a common language. Different synchronizers use different data structures internally, and have different network messages-- however, the *information* they send can all be represented with a common set of concepts:
 
@@ -82,7 +136,7 @@ These three concepts are enough to represent any type of change to a JSON data s
 
 However, synchronizers also differ in how they *merge* changes to the same region of state. These differences can be captured as a *merge type*:
 
- - **Merges Types** define how edits to the same location resolve
+ - **Merge Types** define how edits to the same location resolve
 
 If a synchronizer expresses state changes using versions, locations, and patches, and specifies its merge types, then it can synchronize with any other braid synchronizer implementing the same merge types, no matter their internal implementation.
 
@@ -92,7 +146,7 @@ Finally, synchronizers also broadcast *acknowledgements* of the versions they ha
 
 The rest of this section explains how these concepts work together.
 
-### *Versions* form a DAG of Time
+#### *Versions* form a DAG of Time
 
 A version marks a single point in time, for which a resource has a single, fixed value.
 
@@ -111,7 +165,7 @@ Versions are represented as opaque (but unique) strings. You can represent anyth
 "[2,5,0,5]"    # A version vector
 ```
 
-### *Locations* specify where edits take place
+#### *Locations* specify where edits take place
 
 A *location* is a point in space, irrespective of time. The index of a location might change over time, as characters are inserted or deleted before it, but the location should remain identifiable across versions.
 
@@ -128,7 +182,7 @@ We use approach (1) in the network messages. CRDT systems can then translate a v
 
 Locations specify the start and end positions of patches.
 
-### *Patches* specify state changes
+#### *Patches* specify state changes
 
 Each *patch* is a colored region in a braid, that replaces a region of state with something new:
 
@@ -155,11 +209,11 @@ All patches are *replace* operations. Insertions are implemented as replacing a 
 
 See the section on *Portals* below to see how future work can implement *moves*, *copies*, and *nested splices* by referring to regions from past versions.
 
-### *Locations* specify the offsets of patches
+#### *Locations* specify the offsets of patches
 
 The indexes on the left-hand side of a patch specify the start and end *locations* of the patch's replacement region. The location is indexed with respect to the merger of all parent versions.
 
-### Merge Types
+#### Merge Types
 
 Mergers are computed differently for different *merge types*. For instance:
   - Text editing strings
@@ -168,16 +222,53 @@ Mergers are computed differently for different *merge types*. For instance:
 
 ...all merge differently.
 
-### Alternative designs
-Within these concepts, there are many ways to express each one. This section explains a proposal for each, and gives the reasons for its design.
-
-This design strives to make simple synchronizers easy, and complex synchronizers possible. Some synchronizers are simple to write, but lack features. Some features require more complex implementations. Our common language must allow different synchronizers to communicate.
 
 #### Versions can *merge* to create new versions
 
 Not all versions need to be publicly broadcast—peers can reconstruct any *merge* version using the information in its parents and its merge type. Therefore, peers only need to broadcast versions that contain *edits*. Once a peer sees both of these edits, their strands rejoin in a *merge*. Until the observing peer makes an edit, this merge is implicit. When a new edit is made on top of these, the split versions are the *parents* of this new version, and this new version "locks in" the merge.
 
-----
+## Execution Plan
+
+- First, a polyfill Library for existing browsers and servers, on a websocket protocol
+- Later, low-level protocol and implementation
+
+Backwards compatible:
+ - With HTTP clients
+ - With HTTP servers
+
+We are building interoperability into libraries:
+ - Statecraft
+ - Statebus
+ - Sync9
+ - Automerge
+
+# The end
+
+```
+. . . 
+. .
+.
+. .
+. . .
+. .
+.
+. .
+. . .   the end the end the end the end the end the end the end the end the end
+. .
+.
+. .
+. . .
+. .
+.
+. .
+. . .
+
+```
+
+
+# Scratch pad area
+
+## Notes on the Braid Model
 
 The Braid model represents the expansion and compression of space over time with three sets of objects:
  - **Versions** define points in time, irrespective of space
@@ -224,7 +315,7 @@ In the protocol, each piece of state can specify its resolver function, like a *
 
 Note that in practice, a synchronizer's resolver might not actually be implemented as a modular function. Real-world OT systems bake resolution into their transformation steps, and CRDTs bake it into their data structures and read functions. However, no matter the structure of their internal code, any system can *specify* its resolution strategy abstractly as a resolver, as a standard way to describe how to interoperate with it. Resolvers specify the protocol; not the implementation.
 
-### Braid generalizes the OT and CRDT paradigms
+#### Braid generalizes the OT and CRDT paradigms
 
 The Braid allows us to map Space, Time, and Patches amongst one another. From this general view, we can see the OT and CRDT paradigms as special cases:
 
@@ -300,7 +391,7 @@ Subscriptions require holding network connections open, and remembering the stat
 Whereas HTTP messages are either a *request* or *response* in a client-initiated connection, Braid messages can be initiated by either peer.
 
 
-| HTTP 1, 2, 3 | Braid | Meaning |
+| HTTP  | Braid | Meaning |
 | ------------- |    ------------ | ------ |
 |   Get Request |      Get message | "I want this" |
 |   Get Response |      Set message | "This is the current version" |
