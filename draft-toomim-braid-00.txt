@@ -570,7 +570,7 @@ Versioning
 
 
 ======================
-== Network Examples ==
+== Network Messages ==
   
   We present some examples of the Braid protocol, from the perspective
   of a client communicating with a server.
@@ -616,16 +616,59 @@ Versioning
     Recv: {ack: "user/fred", version: "36x02"}             [5]
     Send: {forget: "user/fred"}                            [6]
 
-    [1] The client requests the current version of "/current_user", 
-        as a patch based on version 62347, which it has in cache.
-    [2] The server responds with a SET containing a patch.
-    [3] The client acknowledges receipt of the new version.
-        This enables the server to prune its history of old versions.
-    [4] The client updates the current user's name to "Fred Wilson".
-    [5] The server acknowledges receipt of the new version.
-        This enables the client to prune its history.
-    [6] The client is done with current_user, and unsubscribes.
+    [1]: The client requests the current version of "/current_user", 
+         as a patch based on version 62347, which it has in cache.
+    [2]: The server responds with a SET containing a patch.
+    [3]: The client acknowledges receipt of the new version.
+         This enables the server to prune its history of old versions.
+    [4]: The client updates the current user's name to "Fred Wilson".
+    [5]: The server acknowledges receipt of the new version.
+         This enables the client to prune its history.
+    [6]: The client is done with current_user, and unsubscribes.
     
+  GET semantics:
+  
+    Send: {get: "val"}                                     [1a]
+    Recv: {set: "val", val: ..., version: "vX"}            [1b]
+    ...
+    Send: {get: "val", version: "vX"}                      [2a]
+    Recv: {set: "val", version: "vX", val: ...}            [2b]
+    ...
+    Send: {get: "val", parents: ["vPA", "vPB"]}            [3a]
+    Send: {get: "val", parents: ["vPA", "vPB"],            [3b]
+           version: "vX", patches: ...}            
+    ...
+    Send: {get: "val", version: "vX",                      [4a]
+           parents: ["vPA", "vPB"]}
+    Send: {get: "val", version: "vX",                      [4b]
+           parents: ["vPA", "vPB"], patches: ...}
+     
+    [1a]: The client requests the document "val".
+    [1b]: The server sends the client the most recent version, giving
+          the explicit value of the document as well as the ID of the
+          most recent version. The server also subscribes the client
+          to new updates.
+          
+    [2a]: The client requests version "vX" of document "val".
+    [1b]: The server sends the client version "vX", giving the explicit
+          value of the document at version "vX" as well as the ID "vX".
+          The server does NOT subscribe the client to new updates.
+          
+    [3a]: The client requests the document "val" as a patch based on
+          parent versions "vPA" and "vPB".
+    [3b]: The server sends the client the most recent version, giving
+          its value as a patch against the implicit merge of the given
+          parents "vPA" and "vPB", even if these are not the original
+          parents of version "vX". The server also subscribes the
+          client to new updates.
+          
+    [4a]: The client requests version "vX" of document "val" as a patch
+          based on parent versions "vPA" and "vPB".
+    [3b]: The server sends the client verion "vX", giving its value as
+          a patch against the implicit merge of the given parents "vPA"
+          and "vPB", even if these are not the original parents of
+          version "vX". The server does NOT subscribe the client to new
+          updates.
 
 ================
 == Conclusion ==
