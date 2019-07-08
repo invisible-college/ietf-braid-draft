@@ -542,6 +542,46 @@ Network Examples
     [2]: The server sends the client the value of "text"
     [3]: The client changes the value to "Hello, World!"
     [4]: The client unsubscribes from edits to "text"
+    
+   Basic session with versioning:
+   
+    Send: {get: "text"}                                    [1]
+    Recv: {set: "text", val: "Hello", version: "v1"}       [2]
+    Send: {set: "text", version: "v2",                     [3]
+           patches: ['[5:5] = ", World!"'],
+           parents: ["v1"]}
+    Send: {forget: "text"}                                 [4]
+    
+    [1]: The client requests the most recent version of "text"
+    [2]: The server sends the client the value of "text"
+    [3]: The client adds ", World!" on to the end of "text"
+    [4]: The client unsubscribes from edits to "text"
+    
+  JSON locations and more complex versioning:
+  
+    Send: {get: "user/fred", parents: ['62347']}           [1]
+    Recv: {set: "user/fred",                               [2]
+           patches: ['.name[0] = "F"'],
+           version: '2h38a',
+           parents: ['62347']}
+    Send: {ack: "user/fred", version: "2h38a"}             [3]
+    Send: {set: "user/fred",                               [4]
+           patches: [".name[4:4] = \" Wilson\""],
+           version: "36x02",
+           parents: ["2h38a"]}
+    Recv: {ack: "user/fred", version: "36x02"}             [5]
+    Send: {forget: "user/fred"}                            [6]
+
+    [1] The client requests the current version of "/current_user", 
+        as a patch based on version 62347, which it has in cache.
+    [2] The server responds with a SET containing a patch.
+    [3] The client acknowledges receipt of the new version.
+        This enables the server to prune its history of old versions.
+    [4] The client updates the current user's name to "Fred Wilson".
+    [5] The server acknowledges receipt of the new version.
+        This enables the client to prune its history.
+    [6] The client is done with current_user, and unsubscribes.
+    
 
 ================
 == Conclusion ==
