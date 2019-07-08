@@ -275,12 +275,11 @@ Status of this Memo
   opportunity to unify a number of disparate features (SSE, E-tags,
   Cache-control, PATCH, JSON-Diff) within a simple integrated design.
 
-  Rather than shoe-horning these changes into the existing HTTP
-  semantics, we propose designing a simpler new layer, with a
-  backwards-compatible mapping to HTTP's existing semantics.  This
-  allows existing applications to interoperate, but new applications can
-  opt-in to a simpler web API that provides more synchronization
-  features.
+  Rather than shoe-horn these changes into the existing HTTP semantics,
+  we propose a new simpler layer, with a backwards-compatible mapping to
+  HTTP's existing semantics.  This allows existing applications to
+  interoperate, but new applications can opt-in to a simpler web API
+  that provides more synchronization features.
  
   We can deploy these semantics in two phases:
 
@@ -300,11 +299,12 @@ Status of this Memo
        itself, in a new layer via an HTTP Upgrade header [RFC 2616,
        section 14.42].
        
-  Finally, both versions of the protocol maintain
-  backwards-compatibility.  Any client accessing a Braid server via HTTP
-  1,2 or 3 will be able to GET, PUT, and POST Braid state, but without
-  full synchronization capabilities.  Likewise, Braid clients can access
-  state on HTTP servers, but will have to poll the server for updates.
+  Both versions of the protocol can maintain backwards-compatibility
+  with existing HTTP clients and servers.  Any client accessing a Braid
+  server via HTTP 1,2 or 3 will be able to GET, PUT, and POST Braid
+  state, but without full synchronization capabilities.  Likewise, Braid
+  clients can access state on HTTP servers, but will have to poll the
+  server for updates.
 
 
 ========================================================================
