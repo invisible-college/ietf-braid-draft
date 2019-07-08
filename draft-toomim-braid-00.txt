@@ -7,12 +7,13 @@ Intended status: Proposed Standard                             R. Walker
               The Braid Protocol: Synchronization for HTTP
                          draft-toomim-braid-00
 
-                       ____              _     _ 
-                      |    |            (_)   | |
-                      | |) )  ____ _____ _  __| |
-                      |  _ \ / ___)____ | |/ _  |
-                      | |_) ) |   / ___ | ( (_| |
-                      |____/|_|   \_____|_|\____|
+        :::::::::  :::::::::      :::     ::::::::::: :::::::::  
+        :+:    :+: :+:    :+:   :+: :+:       :+:     :+:    :+: 
+        +:+    +:+ +:+    +:+  +:+   +:+      +:+     +:+    +:+ 
+        +#++:++#+  +#++:++#:  +#++:++#++:     +#+     +#+    +:+ 
+        +#+    +#+ +#+    +#+ +#+     +#+     +#+     +#+    +#+ 
+        #+#    #+# #+#    #+# #+#     #+#     #+#     #+#    #+# 
+        #########  ###    ### ###     ### ########### ######### 
 
 Abstract
 
@@ -29,7 +30,7 @@ Abstract
   website's state.
 
   We have a working prototype of the Braid, and have deployed it with
-  production websites.  This document describes the protocol, how it
+  production websites.  This memo describes the protocol, how it
   differs from prior versions of HTTP, and a plan to deploy it in a
   backwards-compatible way, where web developers can opt into the new
   synchronization features without breaking the rest of the web.
@@ -271,11 +272,11 @@ Status of this Memo
 ========================================================================
 |                    Deployment and Upgrade Plan                       |
 
-  Braid proposes basic changes to HTTP and REST, which create an
+  Braid makes fundamental changes to HTTP and REST, which creates an
   opportunity to unify a number of disparate features (SSE, E-tags,
   Cache-control, PATCH, JSON-Diff) within a simple integrated design.
 
-  Rather than shoe-horn these changes into the existing HTTP semantics,
+  Rather than shoe-horn these changes into the existing HTTP semantics, 
   we propose a new simpler layer, with a backwards-compatible mapping to
   HTTP's existing semantics.  This allows existing applications to
   interoperate, but new applications can opt-in to a simpler web API
@@ -288,7 +289,7 @@ Status of this Memo
        semantics in existing websites.
 
        In this phase, browsers fetch the initial HTML page over the
-       existing HTTP protocol, which includes Javascript code, that
+       existing HTTP protocol, which includes Javascript code that
        initiates a WebSocket connection that runs the Braid protocol.
        This WebSocket version of the Braid protocol provides the full
        synchronization functionality, but is less performant --
@@ -301,7 +302,7 @@ Status of this Memo
        
   Both versions of the protocol can maintain backwards-compatibility
   with existing HTTP clients and servers.  Any client accessing a Braid
-  server via HTTP 1,2 or 3 will be able to GET, PUT, and POST Braid
+  server via HTTP 1, 2, or 3 will be able to GET, PUT, and POST Braid
   state, but without full synchronization capabilities.  Likewise, Braid
   clients can access state on HTTP servers, but will have to poll the
   server for updates.
@@ -325,9 +326,9 @@ Generalized request/response
 
   In HTTP, a client sends a *request* to the server, and that request is
   met with a *response*. By contrast, a Braid connection is two-way, so
-  messages can be initiated by either party. Rather than giving a
+  messages can be initiated by either party.  Rather than giving a
   response to a message, a Braid server sends a separate message that
-  acts as the response. It turns out that a GET response message has the
+  acts as the response.  It turns out that a GET response message has the
   same effect on a peer as a SET request message-- both set the state on
   the recipient.
 
@@ -352,7 +353,7 @@ Subscriptions
   subscription continues until the client sends a FORGET. Finally,
   Braid unifies the PUT, POST, and PATCH methods in to a single
   SET method, which is able to both create state and change state.
-
+  
   ---------------------------------------------------------------------
   | HTTP method    | Braid method | What's new                        |
   | -------------- | ------------ | --------------------------------- | 
@@ -362,6 +363,13 @@ Subscriptions
   | Delete         | Delete       | Also updates all subscribers      |
   ---------------------------------------------------------------------
   
+  The traditional distinction between PUT and POST is that PUT requests
+  are idempotent, allowing them to be cached and retried, whereas POST
+  is often not.  However, the Braid protocol allows idempotence to be
+  distinguished by re-using a version on Set -- if two messages set a
+  state to the same version, they are idempotent, and equivalent to a
+  PUT.
+
   In their simplest forms, these messages are otherwise semantically
   identical to their corresponding HTTP methods.  When robust
   synchronization is required, these messages will include optional
@@ -382,13 +390,15 @@ Versioning
    - PATCHES replace regions of space, across spans of time
 
   These three objects are enough to represent any type of change to a
-  JSON data structure.  (We have verified this by encoding the
-  network messages of ShareDB and Automerge in these objects and they
-  still work.)
+  JSON data structure.  We have verified this experimentally, by
+  implementing a translation algorithm that converts the network
+  messages of ShareDB (an Operational Transform synchronizer) and
+  Automerge (a CRDT synchronizer) into these objects, and back again,
+  and verifying that the synchronizers still work in fuzz testing.
 
   However, synchronizers also differ in how they resolve conflicting
   changes to the same region of state.  We can generalize the behavior
-  of these resolvers by adding *merge types*:
+  of these resolvers by defining *merge types*:
 
    - MERGE TYPES define how edits to the same location resolve
 
