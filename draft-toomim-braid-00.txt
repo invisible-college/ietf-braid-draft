@@ -534,6 +534,21 @@ Versioning
   next section.
 
 
+Network Examples
+  
+  We present some examples of the Braid protocol, from the perspective of a client communicating with a server.
+  
+  Basic session with no versioning:
+  
+    Send: {get: "text"}                                    [1]
+    Recv: {set: "text", val: "Hello"}                      [2]
+    Send: {set: "text", val: "Hello, World!"}              [3]
+    Send: {forget: "text"}                                 [4]
+    
+    [1]: The client requests the most recent version of "text"
+    [2]: The server sends the client the value of "text"
+    [3]: The client changes the value to "Hello, World!"
+    [4]: The client unsubscribes from edits to "text"
 
 ================
 == Conclusion ==
