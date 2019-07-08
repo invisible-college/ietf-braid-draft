@@ -79,6 +79,8 @@ Status of this Memo
   that every dynamic website has to do, but there is no standard way to
   do it.
 
+
+
       ======= HTTP Websites =======      ====== Braid Websites ======
 
       Today's websites are               Braid generalizes HTTP and
@@ -184,6 +186,7 @@ Status of this Memo
   interoperate, and embeds it as an extension to HTTP.
 
 
+
   When applying synchronization to the web, we see the power of
   synchronization manifest in these concrete ways:
 
@@ -271,8 +274,9 @@ Status of this Memo
 
 
 
-========================================================================
-|                    Deployment and Upgrade Plan                       |
+
+=================================
+== Deployment and Upgrade Plan ==
 
   Braid makes fundamental changes to HTTP and REST, which creates an
   opportunity to unify a number of disparate features (SSE, E-tags,
@@ -309,9 +313,10 @@ Status of this Memo
   clients can access state on HTTP servers, but will have to poll the
   server for updates.
 
+
 
-========================================================================
-|                      Proposed Changes to HTTP                        |
+==============================
+== Proposed Changes to HTTP ==
 
   Braid is composed of a set of opt-in changes that any browser or
   server can implement.
@@ -322,6 +327,61 @@ Status of this Memo
   To do this, it generalizes the explicit request/response pattern of
   HTTP into a set of common messages, opened over a persistent two-way
   connection.
+
+  Additionally, Braid specifies a new content-type for a resource:
+  Linked JSON.  This provides a standard format for dynamic state, akin
+  to how HTML specifies a standard for the presented content of a
+  webpage.
+
+  This section first describes Linked JSON, and then the changes to HTTP
+  networking methods, and finally the versioning features that ensure a
+  peer-to-peer network of edits converge to the same version.
+
+
+
+Linked JSON
+
+  Whereas HTML defines a common format for the presented content of web
+  pages, websites can share their internal state better if they have a
+  standard format for the internal data, or state.
+
+  Braid introduces a Linked JSON data format.  It implements JSON with
+  two additional data types:
+
+    - A *link*, which lets one piece of JSON, at one URL, to link to
+      another piece of JSON at another URL
+
+    - A *binary blob*, which lets one encode a binary file (such as an
+      image) as a value.
+
+  We encode links within JSON like:
+
+    {
+      "foo": 3,
+      "bar": 5,
+      "something else": {"link": "braid://foo.com/something"}
+    }
+
+  Any object with a field named "link" is special, and interpreted as a
+  link.  To encode an actual field named link, you prefix it with an
+  underscore, like:
+
+    {"_link": "this is not a link"}
+
+  To encode an underscore, you use two underscores, like "__", and so
+  on.
+
+  Links allow programmers to combine data across multiple services, even
+  on multiple websites, and to represent non-tree data as JSON, such as
+  circular graphs and relational tables.  Foreign keys can be specified
+  as links to other queries.  Cycles can be specified as a link back to
+  the root of an object.
+
+  Binary data is encoded similarly, as:
+
+    {"binary": "<base64-encoded string>", "content-type": "<type>"}
+
+  The content-type is optional.
 
 
 
@@ -344,6 +404,7 @@ Generalized request/response
   | Put Response | Ack message | "I accept this version"       |
   --------------------------------------------------------------
 
+
 
 Subscriptions
 
@@ -422,7 +483,7 @@ Versioning
 
 
 
-  == VERSIONS ==
+  -- VERSIONS --
   
   Time on a network is ambiguous as a result of latency. If multiple
   peers edit the same state at the same time, we cannot say
@@ -458,7 +519,7 @@ Versioning
 
 
 
-  == PATCHES ==
+  -- PATCHES --
 
   When a peer changes some state, it encodes that change as a patch.  A
   SET message includes 'patches' as an array of patches.  All patches
@@ -494,7 +555,7 @@ Versioning
 
 
 
-  == MERGE TYPES ==
+  -- MERGE TYPES --
   
   Different applications want to resolve conflicts in different ways.
   For instance, strings in a collaborative text editor will want to
@@ -535,7 +596,7 @@ Versioning
 
 
 
-  == ACKNOWLEDGEMENTS ==
+  -- ACKNOWLEDGEMENTS --
 
   In order merge two versions, a synchronzer generally needs enough
   history to trace a path of time back from both versions through a
@@ -567,6 +628,7 @@ Versioning
   and offline in a peer-to-peer network.  We are currently working on
   implementing a solution to this and will update this draft when the
   spec has been finished and tested.
+
 
 
 ======================
