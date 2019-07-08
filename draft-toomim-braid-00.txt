@@ -7,14 +7,6 @@ Intended status: Proposed Standard                             R. Walker
               The Braid Protocol: Synchronization for HTTP
                          draft-toomim-braid-00
 
-        :::::::::  :::::::::      :::     ::::::::::: :::::::::  
-        :+:    :+: :+:    :+:   :+: :+:       :+:     :+:    :+: 
-        +:+    +:+ +:+    +:+  +:+   +:+      +:+     +:+    +:+ 
-        +#++:++#+  +#++:++#:  +#++:++#++:     +#+     +#+    +:+ 
-        +#+    +#+ +#+    +#+ +#+     +#+     +#+     +#+    +#+ 
-        #+#    #+# #+#    #+# #+#     #+#     #+#     #+#    #+# 
-        #########  ###    ### ###     ### ########### ######### 
-
 Abstract
 
   Braid is a proposal for a new version of HTTP that transforms it from
