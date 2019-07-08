@@ -572,7 +572,8 @@ Versioning
 ======================
 == Network Examples ==
   
-  We present some examples of the Braid protocol, from the perspective of a client communicating with a server.
+  We present some examples of the Braid protocol, from the perspective
+  of a client communicating with a server.
   
   Basic session with no versioning:
   
