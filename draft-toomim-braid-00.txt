@@ -87,26 +87,26 @@ IETF Status of this Memo
       multiple computers.  Each          within and between dynamic
       layer has a different API.         websites.
 
-        * Non-standard state API          o Standard state API
+        x Non-standard state API          o Standard state API
 
         _Client__
        /         \ 
       :  o o o o  :   Webpage DOM          o o o o       State
       :   \|  \|  :                         \|  \|  
-      :    *   *  :   HTML Templates         o   o       State
+      :    x   x  :   HTML Templates         o   o       State
       :   /|  /|  :                         /|  /|  
-      :  * * * *  :   JS Models            o o o o       State
+      :  x x x x  :   JS Models            o o o o       State
        \ | | | | /                         | | | |  
          | | | |                           | | | |
          o o o o    - http:// -            o o o o     - braid:// -
        / | | | | \                         | | | | 
-      :  * * * *  :   Views                o o o o       State
+      :  x x x x  :   Views                o o o o       State
       :  |  \| |  :                        |  \| |   
-      :  *   * *  :   Controllers          o   o o       State
+      :  x   x x  :   Controllers          o   o o       State
       :   \ / \|  :                         \ / \| 
-      :    *   *  :   Models                 o   o       State
+      :    x   x  :   Models                 o   o       State
       :     \ /   :                           \ /
-       \.... * ../    Database                 o         State
+       \.... x ../    Database                 o         State
          Server
 
       Today's programmers have to        On the braid, each piece of
@@ -116,7 +116,7 @@ IETF Status of this Memo
       synchronize across all             can be a function of other
       layers and computers.              state, and dynamically
                                          recomputes when its
-                                         dependencies change. Braid
+                                         dependencies change.  Braid
                                          guarantees the network will
                                          synchronize.
 
@@ -133,9 +133,10 @@ IETF Status of this Memo
   new features, and making website internal state accessible anywhere
   desired, and realtime synchronized by default.
 
-  We have a working prototype of the braid, and have deployed it with
-  production websites.  The prototype is implemented as a polyfill
-  library, which adds Braid features to existing browsers and servers.
+  We have a working prototype of the Braid protocol, and have deployed
+  it with production websites.  The prototype is implemented as a
+  polyfill library, which adds Braid features to existing browsers and
+  servers.
 
   This document describes the new protocol, how it differs from prior
   versions of HTTP, and a plan to deploy it in a backwards-compatible
@@ -147,10 +148,11 @@ IETF Status of this Memo
 =====================
 == Synchronization ==
 
-  The main trick is standardizing synchronization.
+  Braid provides the abilities of Operational Transform and CRDTs, for
+  the web.  These are approaches to *synchronization*.
 
   *Synchronization* is a problem that occurs whenever two or more
-  computers or threads access the same state. Synchronization code is
+  computers or threads access the same state.  Synchronization code is
   tricky to write, and can result in clobbers, corruptions, or race
   conditions.
 
@@ -160,20 +162,23 @@ IETF Status of this Memo
 
   Luckily, a set of maturing synchronization technologies (such as
   Operational Transform and CRDTs) can now automate and encapsulate
-  synchronization within a library. They can synchronize arbitrary JSON
+  synchronization within a library.  They can synchronize arbitrary JSON
   data structures across an arbitrary set of computers that make
   arbitrary mutations, and consistently merge their edits into a valid
   result, without a central server, in the face of arbitrary network
-  delays and dropouts. In other words, it is now possible to interact
+  delays and dropouts.  In other words, it is now possible to interact
   with state stored anywhere on a network as if it is a local variable,
   and program as if it is already downloaded and always up-to-date.
 
   Unfortunately, each synchronizer implements a different protocol, with
-  a different set of features and tradeoffs. But we have found that
+  a different set of features and tradeoffs.  But we have found that
   their network messages actually encode the same information, and that
   we can encode a standard protocol, that different synchronizers can
-  interoperate over. We have run successful tests interoperating a CRDT
-  [1] and OT [2] system, for instance, over the common Braid protocol.
+  interoperate over.  This means they can even theoretically
+  interoperate, if they specify and agree on a way to consistently
+  resolve ambiguities.  We have run successful tests interoperating a
+  CRDT [1] and OT [2] system, for instance, over the common Braid
+  protocol.
 
   Braid proposes a common language for synchronizers, so that they can
   interoperate, and embeds it as an extension to HTTP.
@@ -181,6 +186,10 @@ IETF Status of this Memo
 
   Reliable, efficient synchronization solves a number of the Web's
   outstanding problems in networking and caching:
+
+  When applying synchronization to the web, we see the power of
+  synchronization manifest in these concrete ways:
+
 
     - Caches update automatically and instantly, because servers promise
       to push changes to their subscribers.  This obsoletes the
@@ -217,49 +226,63 @@ IETF Status of this Memo
 
   When an application's entire state is on the braid, any user interface
   can synchronize with it in a standard way, and it becomes easy to
-  mix-and-match UIs and state. You can incorporate state from another
-  website into your own website. You can write a new user interface for
-  an existing website's state. You can create new state, to develop new
-  features. You can share the new UI with your friends, so they can use
-  the new features. Then they can share it, and grow a new userbase for
+  mix-and-match UIs and state.  You can incorporate state from another
+  website into your own website.  You can write a new user interface for
+  an existing website's state.  You can create new state, to develop new
+  features.  You can share the new UI with your friends, so they can use
+  the new features.  Then they can share it, and grow a new userbase for
   the new features.
-
-  > **Note:** Can we say here that you can use the same methods of the
-  >   network protocol (get and set) for internal state as well? We
-  >   extend REST with synchronization, and functionally-generated
-  >   state, so that GET will get one and subscribe, which makes the
-  >   insides of a website like a spreadsheet, where you edit any one
-  >   and it updates the rest.... *AND* --> then you can access state on
-  >   any other site over the network as easily as a local variable.
-  >
-  >
-  > Maybe a simpler way to do that is to just show some example code and
-  > say that it works:
-  > 
-  > state.x
-  > state['/foo']
-  > state['https://foo.com/bar]
-  > 
-  > And then I can make the point about this working by collapsing time
-  > and space, using a trick of synchronization, if needed.
-
-  We have a working prototype of the Braid protocol, and have deployed
-  it with production websites. This document describes the new protocol,
-  how it differs from prior versions of HTTP, and a plan to deploy it in
-  a backwards-compatible way, where web developers can opt into the new
-  synchronization features without breaking the rest of the web.
 
 
 ==========================================
 == Deployment and Upgrade Plan ==
 
+
+
+           Closed Networks
+
+        -  -              -  -       Before the web, people used
+     /        \        /        \    closed networks like America
+    |   x   x  |      |   x  x   |   Online.  Content was
+    |          |      |          |   encapsulated behind
+     \    x   /        \    x   /    proprietary protocols.
+        -  -              -  -
+        Aol            Compuserve
+
+
+
+             HTTP Websites
+
+        -  o--------------o  -       The web lets any site define
+     /        o--------o        \    *pages* at URLs.  A site can
+    |   x   x  o------o   x  x   |   *link* to another site's pages,
+    |          o------o          o   adding value to both sites.
+     \    x   o        o    x   /
+        -  o--------------o  -
+       Facebook         NY Times
+
+
+
+             Braid Websites
+                                     The braid lets any site define
+        o--o    _---------o  o       *states* at URLs.  A state can
+        |/    o'-------o  |  |       be a *function* of other states.
+    o---o---o---------o---o--o---o   When a state changes, the others
+       / \ / \ o------o    \  \      automatically synchronize with it,
+      o   o---o \__.   o    o   o    like a spreadsheet.
+        o--o        `-----o--o 
+      My Stuff         Your Stuff
+
+
+
+
   We will grow a new distributed open web to outcompete the existing
-  monopolies. That we might not persuade the existing monopolies to
-  change their ways and find new business models (like Aol), but we can
-  develop our own pages, for our own needs, and yet by building them on
-  this platform, build them together into something good. Like we can
-  build our own personal websites, or blogs, and link them together so
-  that they become news feeds of other people's sites, and supporting
+  monopolies.  We might not persuade the existing monopolies to change
+  their ways and find new business models (like Aol), but we can develop
+  our own pages, for our own needs, and yet by building them on this
+  platform, build them together into something good.  Like we can build
+  our own personal websites, or blogs, and link them together so that
+  they become news feeds of other people's sites, and supporting
   realtime edits, like chat, with realtime notifications, providing the
   same functionality as facebook, for the group of people building
   profiles this way.
@@ -304,7 +327,7 @@ Subscriptions
   | Delete         | Delete       | Also updates all subscribers      |
   ---------------------------------------------------------------------
 
-  This requires only minimal changes to HTTP's semantics. Programmers
+  This requires only minimal changes to HTTP's semantics.  Programmers
   can thus reuse most of their knowledge from HTTP when building Braid
   applications.  There is one new method, `forget`, which is usually
   issued automatically by Braid libraries rather than programmers.
