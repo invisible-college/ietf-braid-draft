@@ -186,7 +186,8 @@ Status of this Memo
   Reliable, efficient synchronization solves a number of the Web's
   outstanding problems in networking and caching:
 
-  We see the following concrete benefits to a synchronized web:
+  When applying synchronization to the web, we see the power of
+  synchronization manifest in these concrete ways:
 
 
     - Caches update automatically and instantly, because servers promise
@@ -276,7 +277,7 @@ Status of this Memo
 
   We will grow a new distributed open web to outcompete the existing
   monopolies.  We might not persuade the existing monopolies to change
-  their ways and find new business models (like AOL), but we can develop
+  their ways and find new business models (like Aol), but we can develop
   our own pages, for our own needs, and yet by building them on this
   platform, build them together into something good.  Like we can build
   our own personal websites, or blogs, and link them together so that
@@ -306,32 +307,8 @@ Status of this Memo
   peer-to-peer.
 
   To do this, it generalizes the explicit request/response pattern of
-  HTTP into a set of common messages, opened over a persistent,
-  encrypted, two-way connection.
-
-
-Subscriptions
-
-  Instead of just *getting* state at a snapshot of time, a Braid client
-  also *subscribes* to future changes.  We implement this by adding
-  semantics to GET, and adding a FORGET method:
-
-  ---------------------------------------------------------------------
-  | HTTP method    | Braid method | What's new                        |
-  | -------------- | ------------ | --------------------------------- | 
-  | Get            | Get          | Also subscribes to future updates |
-  | N/A            | Forget       | Ends a "Get" subscription         |
-  | Put/Post/Patch | Set          | Also updates all subscribers      |
-  | Delete         | Delete       | Also updates all subscribers      |
-  ---------------------------------------------------------------------
-
-  This requires only minimal changes to HTTP's semantics.  Programmers
-  can thus reuse most of their knowledge from HTTP when building Braid
-  applications.  There is one new method, `forget`, which is usually
-  issued automatically by Braid libraries rather than programmers.
-  Finally, Braid unifies the `put`, `post`, and `patch` methods in to a
-  single `set` method, which is able to both create state and change
-  state, and can optionally do so with a patch, as is explained below.
+  HTTP into a set of common messages, opened over a persistent encrypted
+  connection.
 
 
 Generalized request/response
@@ -353,37 +330,37 @@ Generalized request/response
   an explicit *response* block.  It turns out that a GET response
   message has the same effect on a peer as a SET request message-- both
   set the state on the recipient.
+  
+
+Subscriptions
+
+  Instead of just *getting* state at a snapshot of time, a Braid client
+  also *subscribes* to future changes.  We implement this by adding
+  semantics to GET, and adding a FORGET method.  This requires only
+  minimal changes to HTTP's semantics.  Programmers can thus reuse most
+  of their knowledge from HTTP when building Braid
+  applications.  The new method, `forget`, which is usually
+  issued automatically by Braid libraries rather than programmers.
+  Finally, Braid unifies the `put`, `post`, and `patch` methods in to a
+  single `set` method, which is able to both create state and change
+  state.
+
+  ---------------------------------------------------------------------
+  | HTTP method    | Braid method | What's new                        |
+  | -------------- | ------------ | --------------------------------- | 
+  | Get            | Get          | Also subscribes to future updates |
+  |                | Forget       | Ends a "Get" subscription         |
+  | Put/Post/Patch | Set          | Also updates all subscribers      |
+  | Delete         | Delete       | Also updates all subscribers      |
+  ---------------------------------------------------------------------
+
+  
+  corresponding HTTP methods. When robust synchronization is
+  required, these messages will include optional *versioning* features.
 
 
 
-Linked JSON
-
-
-Websocket Transport and Messaging (for the Polyfill Library)
-
-  Messages are sent over the Websocket encoded as JSON.  There are five
-  basic messages:
-
-    {get: "path"}
-    {set: "path", val: {something: 3}}
-    {forget: "path"}
-    {delete: "path"}
-    {ack: "path"}
-
-  More advanced messages add attributes to the JSON:
-
-    {get: "path", version: "v2", parents: ["v1"]}
-    {set: "path", version: "v2", parents: ["v1"], patches: ["[3] = 9"]}
-    {ack: "path", version: "v2"}
-
-  These additional attributes provide the information necessary to
-  synchronize an OT or CRDT algorithm.
-
 Versioning
-
-  Optional.  Makes simple synchronizers easy, and complex synchronizers
-  possible.  Can mix and match features, in different combinations, for
-  different applications.
 
   Even though there are many synchronizers, it is possible for them to
   communicate in a common language.  Different synchronizers use
