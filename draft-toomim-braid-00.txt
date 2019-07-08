@@ -264,13 +264,13 @@ IETF Status of this Memo
 
 
              Braid Websites
-                                     The braid lets any site define
-        o--o    _---------o  o       *states* at URLs.  A state can
-        |/    o'-------o  |  |       be a *function* of other states.
-    o---o---o---------o---o--o---o   When a state changes, the others
-       / \ / \ o------o    \  \      automatically synchronize with it,
-      o   o---o \__.   o    o   o    like a spreadsheet.
-        o--o        `-----o--o 
+                                     
+        o--o    _---------o  o       The braid lets any site define
+        |/    o'-------o  |  |       *states* at URLs.  A state can
+    o---o---o---------o---o--o---o   be a *function* of other states.
+       / \ / \ o------o    \  \      When a state changes, the others
+      o   o---o \__.   o    o   o    automatically synchronize with it,
+        o--o        `-----o--o       like a spreadsheet.
       My Stuff         Your Stuff
 
 
