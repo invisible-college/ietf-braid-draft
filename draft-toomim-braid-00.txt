@@ -454,14 +454,12 @@ Versioning
 
   == PATCHES ==
 
-  When a peer changes some state, it encodes that change as a patch. 
-  A SET message will include the 'patches' key as an array of patches.
-  All patches are replace operations, referencing a region of space and
-  what it should be replaced with. The region of space is formatted as
-  an index or key into the target object (which is specified as part of
-  the SET message). The format of the patch is:
-  
-                "(obj)location = value"
+  When a peer changes some state, it encodes that change as a patch.  A
+  SET message includes 'patches' as an array of patches.  All patches
+  are *replace* operations, that replace one region of space with a new
+  value.  The region being replaced is specified as a start and end
+  index of the previous state, which is computed by merging all the
+  parents of the version using its merge type.
   
   Insertions are implemented as replacing a zero-length region with a
   non-zero-length region, and deletes replace a non-zero length region
@@ -498,25 +496,35 @@ Versioning
   debits to a bank account balance occur in parallel, we will want to
   merge the debits by adding the differences together.
   
-  When the time DAG has multiple leaves (versions with no children), the
-  current state can only be understood as a merge of the leaves. We give
-  each piece of state a merge type, which specifies formally how
-  the leaves should be merged. Each piece of state can have its own
-  merge type, which will be communicated with the first SET message.
+  A "merge type" specifies how any two edits made in parallel are merged
+  together.  If two synchronizers implement the same merge type for some
+  state, they will converge to a consistent result after arbitrary
+  merges.  Merge types are specified by unique strings, such as
+  "sync9-string" or "sharedb-rich-text".
+
+     LWW(vid)       # Last-write-wins, sorted by version ID
+     text(vid)      # Merges text edits like Google Docs
+     counter        # Merges additions and subtractions by summing
+
+  All peers synchronizing with a piece of state will need to implement
+  the same merge types.  We envision a handful of merge types will
+  likely cover most situations on the web.  Each field in a JSON object
+  can merge using a different merge type.  One way to specify merge
+  types of JSON objects is with a schema:
   
-  Tentatively, the merge type is a string which is the name of a
-  specific, hardcoded resolution strategy. Braid implementations will
-  understand various common merge types. As long as all peers understand
-  the specified merge type, they will converge to a consistent result.
-  
-  Note that in practice, the resolver corresponding with a merge type 
-  might not actually be implemented as a modular function. Real-world OT
-  systems bake resolution into their transformation steps, and CRDTs
-  bake it into their data structures and read functions. However, no
-  matter the structure of their internal code, any system can specify
-  its resolution strategy abstractly as a merge type: as a standard way
-  to describe how to interoperate with it. In other words, merge types
-  specify the end behavor, not the implementation.
+      {
+          id: <string>            : LWW(vid)
+          body: <string>          : text(vid)
+          authors: <array>        : text(vid) [
+              author_id: <string> : LWW(vid)
+          ]
+          likes: <int>            : counter
+      }
+
+  However, we have not yet implemented configurable merge types in our
+  prototype, or settled on a way to communicate them in the protocol.
+  Thus, we do not specify merge types in the network examples in the
+  next section.
 
 
 
