@@ -7,15 +7,12 @@ Intended status: Proposed Standard                             R. Walker
               The Braid Protocol: Synchronization for HTTP
                          draft-toomim-braid-00
 
-
-        :::::::::  :::::::::      :::     ::::::::::: :::::::::  
-        :+:    :+: :+:    :+:   :+: :+:       :+:     :+:    :+: 
-        +:+    +:+ +:+    +:+  +:+   +:+      +:+     +:+    +:+ 
-        +#++:++#+  +#++:++#:  +#++:++#++:     +#+     +#+    +:+ 
-        +#+    +#+ +#+    +#+ +#+     +#+     +#+     +#+    +#+ 
-        #+#    #+# #+#    #+# #+#     #+#     #+#     #+#    #+# 
-        #########  ###    ### ###     ### ########### ######### 
-
+                       ____              _     _ 
+                      | __ |            (_)   | |
+                      | |_||  ____ _____ _  __| |
+                      |  _ \ / ___)____ | |/ _  |
+                      | |_) ) |   / ___ | ( (_| |
+                      |____/|_|   \_____|_|\____|
 
 Abstract
 
@@ -43,7 +40,7 @@ Status of this Memo
 
   This Internet-Draft is submitted in full conformance with the
   provisions of BCP 78 and BCP 79.
-
+  
   Internet-Drafts are working documents of the Internet Engineering Task
   Force (IETF), its areas, and its working groups.  Note that other
   groups may also distribute working documents as Internet-Drafts.  The
@@ -150,7 +147,7 @@ Status of this Memo
 =====================
 == Synchronization ==
 
-  Braid provides the abilities of Operational Transform and CRDTs, for
+  Braid provides the abilities of Operational Transform and CRDTs for
   the web.  These are approaches to *synchronization*.
 
   *Synchronization* is a problem that occurs whenever two or more
@@ -218,22 +215,22 @@ Status of this Memo
     - Every <textarea> becomes a collaborative editor (like Google Docs)
       by default.
 
-    - Servers become optional.  Many web apps can function without a
+    - Servers become optional.  Many apps can function without a
       server, because peers can synchronize with one another directly
       over the protocol.
-
-
-==============================
-== Separating UI from State ==
-
-  When an application's entire state is on the braid, any user interface
-  can synchronize with it in a standard way, and it becomes easy to
-  mix-and-match UIs and state.  You can incorporate state from another
-  website into your own website.  You can write a new user interface for
-  an existing website's state.  You can create new state, to develop new
-  features.  You can share the new UI with your friends, so they can use
-  the new features.  Then they can share it, and grow a new userbase for
-  the new features.
+    
+    - In standardizing synchronization, we implicitly create a standard
+      for state. This allows state to be shared between different sites
+      without the need for an extra API.
+    
+    - Standardizing the representation of *state* allows us to separate
+      the representation of UI and state. Most HTTP websites *inject*
+      the state that they receive into templates representing UI
+      components. Braid sites can instead understand UI components as
+      lenses through which to view state. This improves the semantics of
+      UI rendering, allows state to be inspected by clients directly,
+      and makes it easier to build multiple alternative UIs for a single
+      site.
 
 
 ==========================================
@@ -387,8 +384,7 @@ Versioning
 
   Optional.  Makes simple synchronizers easy, and complex synchronizers
   possible.  Can mix and match features, in different combinations, for
-  different applications.  <span style='background-color:yellow'>More
-  info here? Not sure I understand this paragraph CKM</span>
+  different applications.
 
   Even though there are many synchronizers, it is possible for them to
   communicate in a common language.  Different synchronizers use
