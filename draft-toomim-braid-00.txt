@@ -1,6 +1,8 @@
 Internet-Draft                                                 M. Toomim
 Expires: Jan 8, 2020                                   Invisible College
-Intended status: Proposed Standard                          July 8, 2019
+Intended status: Proposed Standard                             R. Walker
+                                                       Invisible College
+                                                            July 8, 2019
 
               The Braid Protocol: Synchronization for HTTP
                          draft-toomim-braid-00
@@ -37,7 +39,7 @@ Abstract
 
 
 
-IETF Status of this Memo
+Status of this Memo
 
   This Internet-Draft is submitted in full conformance with the
   provisions of BCP 78 and BCP 79.
@@ -263,13 +265,13 @@ IETF Status of this Memo
 
 
              Braid Websites
-                                     The braid lets any site define
-        o--o    _---------o  o       *states* at URLs.  A state can
-        |/    o'-------o  |  |       be a *function* of other states.
-    o---o---o---------o---o--o---o   When a state changes, the others
-       / \ / \ o------o    \  \      automatically synchronize with it,
-      o   o---o \__.   o    o   o    like a spreadsheet.
-        o--o        `-----o--o 
+                                     
+        o--o    _---------o  o       The braid lets any site define
+        |/    o'-------o  |  |       *states* at URLs.  A state can
+    o---o---o---------o---o--o---o   be a *function* of other states.
+       / \ / \ o------o    \  \      When a state changes, the others
+      o   o---o \__.   o    o   o    automatically synchronize with it,
+        o--o        `-----o--o       like a spreadsheet.
       My Stuff         Your Stuff
 
 
@@ -470,6 +472,15 @@ Author's Address
 
   Michael Toomim
   Invisible College, Berkeley
+  2053 Berkeley Way
+  Berkeley, CA 94704
 
   Email: toomim@gmail.com
   Web:   https://invisible.college/@toomim
+
+  Rafie Walker
+  Invisible College, Berkeley
+  2053 Berkeley Way
+  Berkeley, CA 94704
+
+  Email: slickytail.mc@gmail.com
