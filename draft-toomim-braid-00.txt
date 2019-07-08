@@ -221,14 +221,14 @@ Status of this Memo
       protocol.
 
     - In standardizing synchronization, we implicitly create a standard
-      for state. This allows state to be shared between different sites
+      for state.  This allows state to be shared between different sites
       without the need for an extra API.
     
     - Standardizing the representation of *state* allows us to separate
-      the representation of UI and state. Most HTTP websites *inject*
+      the representation of UI and state.  Most HTTP websites *inject*
       the state that they receive into templates representing UI
-      components. Braid sites can instead understand UI components as
-      lenses through which to view state. This improves the semantics of
+      components.  Braid sites can instead understand UI components as
+      lenses through which to view state.  This improves the semantics of
       UI rendering, allows state to be inspected by clients directly,
       and makes it easier to build multiple alternative UIs for a single
       site.
@@ -388,7 +388,7 @@ Linked JSON
 Generalized request/response
 
   In HTTP, a client sends a *request* to the server, and that request is
-  met with a *response*. By contrast, a Braid connection is two-way, so
+  met with a *response*.  By contrast, a Braid connection is two-way, so
   messages can be initiated by either party.  Rather than giving a
   response to a message, a Braid server sends a separate message that
   acts as the response.  It turns out that a GET response message has the
@@ -409,12 +409,12 @@ Generalized request/response
 Subscriptions
 
   In the Braid model, whenever a client requests some state, it also
-  subscribes to new versions of that state. This requires only minor
+  subscribes to new versions of that state.  This requires only minor
   changes to the semantics of HTTP.
 
   In the Braid protocol, a GET message not only returns the current
   value of state, but also *subscribes* to future updates.  The
-  subscription continues until the client sends a FORGET. Finally,
+  subscription continues until the client sends a FORGET.  Finally,
   Braid unifies the PUT, POST, and PATCH methods in to a single
   SET method, which is able to both create state and change state.
   
@@ -485,7 +485,7 @@ Versioning
 
   -- VERSIONS --
   
-  Time on a network is ambiguous as a result of latency. If multiple
+  Time on a network is ambiguous as a result of latency.  If multiple
   peers edit the same state at the same time, we cannot say
   that one happened before the other, and time forks.  When they
   communicate their changes over the network, they merge their edits,
@@ -503,14 +503,14 @@ Versioning
                 assign an ID to it.
 
   Thus the shape of time is not a line but a Directed Acyclic Graph-- a
-  DAG. Every change to state creates a new version. This
+  DAG.  Every change to state creates a new version.  This
   version has *parents*: all recent (leaf) versions that the
-  client had seen when it made its edit. The edit becomes
+  client had seen when it made its edit.  The edit becomes
   the *child* of its parents.  We can say that one version came
   before another only if the first version is an *ancestor* of the
   second.
    
-  Every version is identified by a unique ID. There is no requirement on
+  Every version is identified by a unique ID.  There is no requirement on
   the format of the ID, only that it be a unique string.
   
   When a peer makes an edit, it broadcasts the edit's version ID, 
@@ -538,13 +538,13 @@ Versioning
     .foo[0].bar = null       # Replace obj.foo[0].bar with null
     
     [3:3] = "asdf"           # Insert the string 'asdf' at index 3 of
-                               string obj. Illegal if array.
+                               string obj.  Illegal if array.
     [3] = "a"                # Set char 3 of string obj to 'a'
                                or element 3 of array obj to 'a'
     [3] = "asdf"             # Illegal if string.
                                If array, set obj[3] to 'asdf'
     [3:4] = [1, 3, 5]        # Splice [1,3,5] into array obj, replacing
-                               element 3. Illegal if string.
+                               element 3.  Illegal if string.
     [4:4] = [{msg: "hi"}]    # Insert an object at the end of array obj
     
     [3:10] = ""              # Delete characters 3-10 in string obj
@@ -708,7 +708,7 @@ Versioning
     [1a]: The client requests the document "val".
     [1b]: The server sends the client the most recent version, giving
           the explicit value of the document as well as the ID of the
-          most recent version. The server also subscribes the client
+          most recent version.  The server also subscribes the client
           to new updates.
           
     [2a]: The client requests version "vX" of document "val".
@@ -721,7 +721,7 @@ Versioning
     [3b]: The server sends the client the most recent version, giving
           its value as a patch against the implicit merge of the given
           parents "vPA" and "vPB", even if these are not the original
-          parents of version "vX". The server also subscribes the
+          parents of version "vX".  The server also subscribes the
           client to new updates.
           
     [4a]: The client requests version "vX" of document "val" as a patch
@@ -729,7 +729,7 @@ Versioning
     [3b]: The server sends the client verion "vX", giving its value as
           a patch against the implicit merge of the given parents "vPA"
           and "vPB", even if these are not the original parents of
-          version "vX". The server does NOT subscribe the client to new
+          version "vX".  The server does NOT subscribe the client to new
           updates.
 
 ================
