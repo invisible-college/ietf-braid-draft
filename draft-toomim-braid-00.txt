@@ -244,8 +244,8 @@ Table of Contents
       the representation of UI and state.  Most HTTP websites *inject*
       the state that they receive into templates representing UI
       components.  Braid sites can instead understand UI components as
-      lenses through which to view state.  This improves the semantics of
-      UI rendering, allows state to be inspected by clients directly,
+      lenses through which to view state.  This improves the semantics
+      of UI rendering, allows state to be inspected by clients directly,
       and makes it easier to build multiple alternative UIs for a single
       site.
 
@@ -500,10 +500,10 @@ Subscriptions
 4.4.1. VERSIONS
   
   Time on a network is ambiguous as a result of latency.  If multiple
-  peers edit the same state at the same time, we cannot say
-  that one happened before the other, and time forks.  When they
-  communicate their changes over the network, they merge their edits,
-  and time merges.
+  peers edit the same state at the same time, we cannot say that one
+  happened before the other, and time forks.  When they communicate
+  their changes over the network, they merge their edits, and time
+  merges.
  
          (O)    All peers are aware of version (O).
          / \
@@ -517,19 +517,17 @@ Subscriptions
                 assign an ID to it.
 
   Thus the shape of time is not a line but a Directed Acyclic Graph-- a
-  DAG.  Every change to state creates a new version.  This
-  version has *parents*: all recent (leaf) versions that the
-  client had seen when it made its edit.  The edit becomes
-  the *child* of its parents.  We can say that one version came
-  before another only if the first version is an *ancestor* of the
-  second.
+  DAG.  Every change to state creates a new version.  This version has
+  *parents*: all recent (leaf) versions that the client had seen when it
+  made its edit.  The edit becomes the *child* of its parents.  We can
+  say that one version came before another only if the first version is
+  an *ancestor* of the second.
    
-  Every version is identified by a unique ID.  There is no requirement on
-  the format of the ID, only that it be a unique string.
+  Every version is identified by a unique ID.  There is no requirement
+  on the format of the ID, only that it be a unique string.
   
-  When a peer makes an edit, it broadcasts the edit's version ID, 
-  its parents version IDs, and a patch from its parents state to its
-  state.
+  When a peer makes an edit, it broadcasts the edit's version ID, its
+  parents version IDs, and a patch from its parents state to its state.
 
 
 
