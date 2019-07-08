@@ -326,12 +326,10 @@ Table of Contents
   Braid is composed of a set of opt-in changes that any browser or
   server can implement.
 
-  Whereas HTTP is explicitly client/server, Braid is capable of running
-  peer-to-peer.
-
-  To do this, it generalizes the explicit request/response pattern of
-  HTTP into a set of common messages, opened over a persistent two-way
-  connection.
+  First, whereas HTTP is explicitly client/server, Braid is capable of
+  running peer-to-peer.  To do this, it generalizes the explicit
+  request/response pattern of HTTP into a set of common messages, opened
+  over a persistent two-way connection.
 
   Additionally, Braid specifies a new content-type for a resource:
   Linked JSON.  This provides a standard format for dynamic state, akin
