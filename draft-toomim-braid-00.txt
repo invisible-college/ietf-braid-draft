@@ -79,6 +79,8 @@ Status of this Memo
   that every dynamic website has to do, but there is no standard way to
   do it.
 
+
+
       ======= HTTP Websites =======      ====== Braid Websites ======
 
       Today's websites are               Braid generalizes HTTP and
@@ -184,6 +186,7 @@ Status of this Memo
   interoperate, and embeds it as an extension to HTTP.
 
 
+
   When applying synchronization to the web, we see the power of
   synchronization manifest in these concrete ways:
 
@@ -401,6 +404,7 @@ Generalized request/response
   | Put Response | Ack message | "I accept this version"       |
   --------------------------------------------------------------
 
+
 
 Subscriptions
 
