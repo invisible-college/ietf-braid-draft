@@ -530,11 +530,47 @@ Versioning
 
   However, we have not yet implemented configurable merge types in our
   prototype, or settled on a way to communicate them in the protocol.
-  Thus, we do not specify merge types in the network examples in the
-  next section.
+  Thus, we do not specify merge types in the network examples given
+  later.
 
 
-Network Examples
+
+  == ACKNOWLEDGEMENTS ==
+
+  In order merge two versions, a synchronzer generally needs enough
+  history to trace a path of time back from both versions through a
+  common "fork point."  Thus, in order to synchronize perfectly, peers
+  need to store historical versions in time back to any fork point from
+  which they expect another peer to send an edit.
+
+  To allow other peers to prune history, any peer thus needs to inform
+  them that it no longer intends to base edits onto versions from the
+  past.  A general way to do this is for peers to agree to always make
+  edits to the most recent versions they have.  Then, a peer will be
+  able to prune old history as long as it knows which versions of
+  history all other peers have seen.  Once all peers have seen a more
+  recent version, a peer can know that they will not base an edit on one
+  of its ancestors.
+
+  In the Braid protocol, peers can communicate which versions they have
+  seen using ACK messages.  Each ACK specifies the URL and version of
+  the state that the peer has seen.  When a peer sends an ACK, it means
+  "everyone who I have sent this version to has also acknowledged its
+  receipt."  Then, once the original sender has received all
+  acknowledgements from all peers, it sends out a final "ack-complete"
+  message, which communicates "everyone in the entire network has
+  acknowledged receipt of this version."  This is enough information for
+  any peer to then know that no peer will be sending an edit based on a
+  prior ancestor.
+
+  However, this spec does not yet handle the case where a peer goes on
+  and offline in a peer-to-peer network.  We are currently working on
+  implementing a solution to this and will update this draft when the
+  spec has been finished and tested.
+
+
+======================
+== Network Examples ==
   
   We present some examples of the Braid protocol, from the perspective of a client communicating with a server.
   
