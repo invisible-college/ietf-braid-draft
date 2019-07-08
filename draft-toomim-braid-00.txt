@@ -147,10 +147,10 @@ Status of this Memo
 =====================
 == Synchronization ==
 
-  Braid provides the abilities of Operational Transform and CRDTs for
-  the web.  These are approaches to *synchronization*.
+  Braid incorporates the abilities of Operational Transform and CRDTs.
+  These are approaches to solving *synchronization*.
 
-  *Synchronization* is a problem that occurs whenever two or more
+  Synchronization is a problem that occurs whenever two or more
   computers or threads access the same state.  Synchronization code is
   tricky to write, and can result in clobbers, corruptions, or race
   conditions.
@@ -307,7 +307,7 @@ Status of this Memo
   peer-to-peer.
 
   To do this, it generalizes the explicit request/response pattern of
-  HTTP into a set of common messages, opened over a persistent encrypted
+  HTTP into a set of common messages, opened over a persistent two-way
   connection.
 
 
@@ -334,29 +334,29 @@ Generalized request/response
 
 Subscriptions
 
-  Instead of just *getting* state at a snapshot of time, a Braid client
-  also *subscribes* to future changes.  We implement this by adding
-  semantics to GET, and adding a FORGET method.  This requires only
-  minimal changes to HTTP's semantics.  Programmers can thus reuse most
-  of their knowledge from HTTP when building Braid
-  applications.  The new method, `forget`, which is usually
-  issued automatically by Braid libraries rather than programmers.
-  Finally, Braid unifies the `put`, `post`, and `patch` methods in to a
-  single `set` method, which is able to both create state and change
-  state.
+  In the Braid model, whenever a client requests some state, it also
+  subscribes to new versions of that state. This requires only minor
+  changes to the semantics of HTTP.
+
+  In the Braid protocol, a GET message not only returns the current
+  value of state, but also *subscribes* to future updates.  The
+  subscription continues until the client sends a FORGET. Finally,
+  Braid unifies the PUT, POST, and PATCH methods in to a single
+  SET method, which is able to both create state and change state.
 
   ---------------------------------------------------------------------
   | HTTP method    | Braid method | What's new                        |
   | -------------- | ------------ | --------------------------------- | 
   | Get            | Get          | Also subscribes to future updates |
-  |                | Forget       | Ends a "Get" subscription         |
+  | - n/a -        | Forget       | Ends a "Get" subscription         |
   | Put/Post/Patch | Set          | Also updates all subscribers      |
   | Delete         | Delete       | Also updates all subscribers      |
   ---------------------------------------------------------------------
-
   
-  corresponding HTTP methods. When robust synchronization is
-  required, these messages will include optional *versioning* features.
+  In their simplest forms, these messages are otherwise semantically
+  identical to their corresponding HTTP methods.  When robust
+  synchronization is required, these messages will include optional
+  *versioning* features.
 
 
 
