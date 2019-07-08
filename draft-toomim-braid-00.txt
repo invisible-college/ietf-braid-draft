@@ -230,6 +230,8 @@ Status of this Memo
       and makes it easier to build multiple alternative UIs for a single
       site.
 
+
+
   Standardized state and synchronization allows the topology of content
   on the web to be less centralized.
 
@@ -321,6 +323,7 @@ Status of this Memo
   HTTP into a set of common messages, opened over a persistent two-way
   connection.
 
+
 
 Generalized request/response
 
@@ -417,6 +420,7 @@ Versioning
 
   The rest of this section explains how these concepts work together.
 
+
 
   == VERSIONS ==
   
@@ -452,6 +456,8 @@ Versioning
   its parents version IDs, and a patch from its parents state to its
   state.
 
+
+
   == PATCHES ==
 
   When a peer changes some state, it encodes that change as a patch.  A
@@ -486,6 +492,7 @@ Versioning
     
     .foo[0].bar = undefined  # Delete obj.foo[0].bar
 
+
 
   == MERGE TYPES ==
   
