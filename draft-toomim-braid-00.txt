@@ -345,11 +345,9 @@ Table of Contents
 4.1. Linked JSON
 
   Whereas HTML defines a common format for the presented content of web
-  pages, websites can share their internal state better if they have a
-  standard format for the internal data, or state.
-
-  Braid introduces a Linked JSON data format.  It implements JSON with
-  two additional data types:
+  pages, braid defines a common format for their internal data, or
+  state: Linked JSON.  This extends standard JSON with two additional
+  datatypes:
 
     - A *link*, which lets one piece of JSON, at one URL, to link to
       another piece of JSON at another URL
