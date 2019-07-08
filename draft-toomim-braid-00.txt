@@ -75,10 +75,11 @@ Table of Contents
    4.4.2.  Patches   . . . . . . . . . . . . . . . . . . . . . . . .  17
    4.4.3.  Merge Types . . . . . . . . . . . . . . . . . . . . . . .  18
    4.4.4.  Acknowledgements  . . . . . . . . . . . . . . . . . . . .  19
-   5.  IANA Considerations . . . . . . . . . . . . . . . . . . . . . . 4
-   6.  Normative References  . . . . . . . . . . . . . . . . . . . . . 4
-   Appendix A.  Acknowledgements . . . . . . . . . . . . . . . . . . . 5
-   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . . . 5
+   5.  Network Messages  . . . . . . . . . . . . . . . . . . . . . .  20
+   6.  Security Considerations . . . . . . . . . . . . . . . . . . .  23
+   7.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  23
+   8.  Copyright Notice  . . . . . . . . . . . . . . . . . . . . . .  23
+   9.  Author's Address  . . . . . . . . . . . . . . . . . . . . . .  23
 
 
 
@@ -177,8 +178,7 @@ Table of Contents
   conditions.
 
   This is a challenging problem, which has seen a number of partial
-  attempts in HTTP (e-tags, cache control, PATCH, JSON-diff, SSE) [cite,
-  cite, cite, cite, cite].
+  attempts in HTTP (e-tags, cache control, PATCH, JSON-diff, SSE).
 
   Luckily, a set of maturing synchronization technologies (such as
   Operational Transform and CRDTs) can now automate and encapsulate
@@ -197,8 +197,7 @@ Table of Contents
   interoperate over.  This means they can even theoretically
   interoperate, if they specify and agree on a way to consistently
   resolve ambiguities.  We have run successful tests interoperating a
-  CRDT [1] and OT [2] system, for instance, over the common Braid
-  protocol.
+  CRDT and OT system, for instance, over the common Braid protocol.
 
   Braid proposes a common language for synchronizers, so that they can
   interoperate, and embeds it as an extension to HTTP.
@@ -297,7 +296,7 @@ Table of Contents
   opportunity to unify a number of disparate features (SSE, E-tags,
   Cache-control, PATCH, JSON-Diff) within a simple integrated design.
 
-  Rather than shoe-horn these changes into the existing HTTP semantics, 
+  Rather than shoe-horn these changes into the existing HTTP semantics,
   we propose a new simpler layer, with a backwards-compatible mapping to
   HTTP's existing semantics.  This allows existing applications to
   interoperate, but new applications can opt-in to a simpler web API
@@ -406,9 +405,9 @@ Table of Contents
   met with a *response*. By contrast, a Braid connection is two-way, so
   messages can be initiated by either party.  Rather than giving a
   response to a message, a Braid server sends a separate message that
-  acts as the response.  It turns out that a GET response message has the
-  same effect on a peer as a SET request message-- both set the state on
-  the recipient.
+  acts as the response.  It turns out that a GET response message has
+  the same effect on a peer as a SET request message-- both set the
+  state on the recipient.
 
   --------------------------------------------------------------
   | HTTP         | Braid       | Meaning                       |
@@ -646,8 +645,8 @@ Subscriptions
 
 
 
-======================
-== Network Messages ==
+
+5. Network Messages
   
   We present some examples of the Braid protocol, from the perspective
   of a client communicating with a server.
@@ -678,6 +677,8 @@ Subscriptions
     [3]: The client adds ", World!" on to the end of "text"
     [4]: The client unsubscribes from edits to "text"
     
+
+
   JSON locations and more complex versioning:
   
     Send: {get: "user/fred", parents: ['62347']}           [1]
@@ -703,6 +704,8 @@ Subscriptions
          This enables the client to prune its history.
     [6]: The client is done with current_user, and unsubscribes.
     
+
+
   GET semantics:
   
     Send: {get: "val"}                                     [1a]
@@ -747,17 +750,23 @@ Subscriptions
           version "vX". The server does NOT subscribe the client to new
           updates.
 
-================
-== Conclusion ==
+
 
+6. Security Considerations
 
-Security Considerations
+  Although this protocol enables and encourages web programmers to make
+  more internal available and shared, it has the same fundamental
+  security model as HTTP.  State at any URL can have access control
+  controlling who can access it.
 
-IANA Considerations
+  However, additional work will be needed to analyze the security
+  concerns of specific uses of the protocol.
+
+7. IANA Considerations
 
   This document has no actions for IANA.
 
-Copyright Notice
+8. Copyright Notice
 
   Copyright (c) 2019 IETF Trust and the persons identified as the
   document authors.  All rights reserved.
@@ -773,7 +782,7 @@ Copyright Notice
   in the Simplified BSD License.
 
 
-Author's Address
+9. Author's Address
 
   Michael Toomim
   Invisible College, Berkeley
