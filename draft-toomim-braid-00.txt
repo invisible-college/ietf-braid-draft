@@ -186,8 +186,7 @@ Status of this Memo
   Reliable, efficient synchronization solves a number of the Web's
   outstanding problems in networking and caching:
 
-  When applying synchronization to the web, we see the power of
-  synchronization manifest in these concrete ways:
+  We see the following concrete benefits to a synchronized web:
 
 
     - Caches update automatically and instantly, because servers promise
@@ -196,8 +195,8 @@ Status of this Memo
       heuristic.  Users never need to force-clear their cache.
 
     - Updates go over the network as diffs, which can be much smaller
-      than the resources they modify, making network usage much more
-      efficient.
+      than the resources they modify, significantly reducing network
+      usage.
 
     - Web apps get an offline mode for free.  Edits from multiple
       clients merge automatically once they come online.  Network
@@ -212,13 +211,13 @@ Status of this Memo
       custom logic to wire together a stack of server-state and
       client-state.  This work is automated by the protocol.
 
-    - Every <textarea> becomes a collaborative editor (like Google Docs)
-      by default.
+    - Every <textarea> can become a collaborative editor (like Google
+      Docs) for free.
 
-    - Servers become optional.  Many apps can function without a
-      server, because peers can synchronize with one another directly
-      over the protocol.
-    
+    - Servers become optional.  Many apps can function without a server,
+      because peers can synchronize with one another directly over the
+      protocol.
+
     - In standardizing synchronization, we implicitly create a standard
       for state. This allows state to be shared between different sites
       without the need for an extra API.
@@ -277,7 +276,7 @@ Status of this Memo
 
   We will grow a new distributed open web to outcompete the existing
   monopolies.  We might not persuade the existing monopolies to change
-  their ways and find new business models (like Aol), but we can develop
+  their ways and find new business models (like AOL), but we can develop
   our own pages, for our own needs, and yet by building them on this
   platform, build them together into something good.  Like we can build
   our own personal websites, or blogs, and link them together so that
@@ -307,8 +306,8 @@ Status of this Memo
   peer-to-peer.
 
   To do this, it generalizes the explicit request/response pattern of
-  HTTP into a set of common messages, opened over a persistent encrypted
-  connection.
+  HTTP into a set of common messages, opened over a persistent,
+  encrypted, two-way connection.
 
 
 Subscriptions
@@ -321,7 +320,7 @@ Subscriptions
   | HTTP method    | Braid method | What's new                        |
   | -------------- | ------------ | --------------------------------- | 
   | Get            | Get          | Also subscribes to future updates |
-  |                | Forget       | Ends a "Get" subscription         |
+  | N/A            | Forget       | Ends a "Get" subscription         |
   | Put/Post/Patch | Set          | Also updates all subscribers      |
   | Delete         | Delete       | Also updates all subscribers      |
   ---------------------------------------------------------------------
