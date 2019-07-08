@@ -59,11 +59,30 @@ Status of this Memo
   The list of Internet-Draft Shadow Directories can be accessed at
   https://www.ietf.org/shadow.html
 
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . . . 3
+   2.  Synchronization . . . . . . . . . . . . . . . . . . . . . . . . 7
+   3.  Deployment and Upgrade Plan . . . . . . . . . . . . . . . . .  10
+   4.  Proposed Changes to HTTP. . . . . . . . . . . . . . . . . . .  11
+   4.1.  Linked JSON   . . . . . . . . . . . . . . . . . . . . . . .  12
+   4.2.  Generalized request/response  . . . . . . . . . . . . . . .  13
+   4.3.  Subscriptions   . . . . . . . . . . . . . . . . . . . . . .  14
+   4.4.  Versioning  . . . . . . . . . . . . . . . . . . . . . . . .  15
+   4.4.1.  Versions  . . . . . . . . . . . . . . . . . . . . . . . .  16
+   4.4.2.  Patches   . . . . . . . . . . . . . . . . . . . . . . . .  17
+   4.4.3.  Merge Types . . . . . . . . . . . . . . . . . . . . . . .  18
+   4.4.4.  Acknowledgements  . . . . . . . . . . . . . . . . . . . .  19
+   5.  IANA Considerations . . . . . . . . . . . . . . . . . . . . . . 4
+   6.  Normative References  . . . . . . . . . . . . . . . . . . . . . 4
+   Appendix A.  Acknowledgements . . . . . . . . . . . . . . . . . . . 5
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . . . 5
 
 
 
-==================
-== Introduction ==
+1. Introduction
 
   HTTP was initially designed to transfer static pages.  If a page
   changes, it is the client's responsibility to issue another GET
@@ -147,8 +166,7 @@ Status of this Memo
 
 
 
-=====================
-== Synchronization ==
+2. Synchronization
 
   Braid incorporates the abilities of Operational Transform and CRDTs.
   These are approaches to solving *synchronization*.
@@ -189,7 +207,6 @@ Status of this Memo
 
   When applying synchronization to the web, we see the power of
   synchronization manifest in these concrete ways:
-
 
     - Caches update automatically and instantly, because servers promise
       to push changes to their subscribers.  This obsoletes the
@@ -232,7 +249,6 @@ Status of this Memo
       UI rendering, allows state to be inspected by clients directly,
       and makes it easier to build multiple alternative UIs for a single
       site.
-
 
 
   Standardized state and synchronization allows the topology of content
@@ -275,8 +291,7 @@ Status of this Memo
 
 
 
-=================================
-== Deployment and Upgrade Plan ==
+3. Deployment and Upgrade Plan
 
   Braid makes fundamental changes to HTTP and REST, which creates an
   opportunity to unify a number of disparate features (SSE, E-tags,
@@ -315,8 +330,8 @@ Status of this Memo
 
 
 
-==============================
-== Proposed Changes to HTTP ==
+
+4. Proposed Changes to HTTP
 
   Braid is composed of a set of opt-in changes that any browser or
   server can implement.
@@ -339,7 +354,7 @@ Status of this Memo
 
 
 
-Linked JSON
+4.1. Linked JSON
 
   Whereas HTML defines a common format for the presented content of web
   pages, websites can share their internal state better if they have a
@@ -385,7 +400,7 @@ Linked JSON
 
 
 
-Generalized request/response
+4.2. Generalized request/response
 
   In HTTP, a client sends a *request* to the server, and that request is
   met with a *response*. By contrast, a Braid connection is two-way, so
@@ -441,7 +456,7 @@ Subscriptions
 
 
 
-Versioning
+4.4. Versioning
 
   Even though there are many synchronizers, it is possible for them to
   communicate in a common language.  Different synchronizers use
@@ -483,7 +498,7 @@ Versioning
 
 
 
-  -- VERSIONS --
+4.4.1. VERSIONS
   
   Time on a network is ambiguous as a result of latency. If multiple
   peers edit the same state at the same time, we cannot say
@@ -519,7 +534,7 @@ Versioning
 
 
 
-  -- PATCHES --
+4.4.2. Patches
 
   When a peer changes some state, it encodes that change as a patch.  A
   SET message includes 'patches' as an array of patches.  All patches
@@ -555,7 +570,7 @@ Versioning
 
 
 
-  -- MERGE TYPES --
+4.4.3. Merge Types
   
   Different applications want to resolve conflicts in different ways.
   For instance, strings in a collaborative text editor will want to
@@ -596,7 +611,7 @@ Versioning
 
 
 
-  -- ACKNOWLEDGEMENTS --
+4.4.4. Acknowledgements
 
   In order merge two versions, a synchronzer generally needs enough
   history to trace a path of time back from both versions through a
