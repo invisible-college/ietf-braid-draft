@@ -170,7 +170,8 @@ Table of Contents
   conditions.
 
   This is a challenging problem, which has seen a number of partial
-  attempts in HTTP (e-tags, cache control, PATCH, JSON-diff, SSE).
+  attempts in HTTP, such as e-tags, cache control, PATCH, JSON-diff, and
+  SSE.
 
   Luckily, a set of maturing synchronization technologies (such as
   Operational Transform and CRDTs) can now automate and encapsulate
@@ -183,16 +184,14 @@ Table of Contents
   and program as if it is already downloaded and always up-to-date.
 
   Unfortunately, each synchronizer implements a different protocol, with
-  a different set of features and tradeoffs.  But we have found that
-  their network messages actually encode the same information, and that
-  we can encode a standard protocol, that different synchronizers can
-  interoperate over.  This means they can even theoretically
-  interoperate, if they specify and agree on a way to consistently
-  resolve ambiguities.  We have run successful tests interoperating a
-  CRDT and OT system, for instance, over the common Braid protocol.
+  a different set of features and tradeoffs.  Braid proposes a common
+  language for synchronizers, so that they can interoperate, and
+  implements it as an extension to HTTP.
 
-  Braid proposes a common language for synchronizers, so that they can
-  interoperate, and embeds it as an extension to HTTP.
+  This lets multiple synchronizers interoperate, if they agree on a way
+  to consistently resolve ambiguities -- a *merge type*.  We have run
+  tests that succesfully interoperate a CRDT and OT system over the
+  common Braid protocol.
 
 
 
@@ -602,7 +601,7 @@ Subscriptions
 
 4.4.4. Acknowledgements
 
-  In order merge two versions, a synchronzer generally needs enough
+  In order merge two versions, a synchronizer generally needs enough
   history to trace a path of time back from both versions through a
   common "fork point."  Thus, in order to synchronize perfectly, peers
   need to store historical versions in time back to any fork point from
@@ -734,7 +733,7 @@ Subscriptions
           
     [4a]: The client requests version "vX" of document "val" as a patch
           based on parent versions "vPA" and "vPB".
-    [3b]: The server sends the client verion "vX", giving its value as
+    [3b]: The server sends the client version "vX", giving its value as
           a patch against the implicit merge of the given parents "vPA"
           and "vPB", even if these are not the original parents of
           version "vX".  The server does NOT subscribe the client to new
