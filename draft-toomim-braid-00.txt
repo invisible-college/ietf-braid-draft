@@ -1,0 +1,453 @@
+Internet-Draft                                                 M. Toomim
+Expires: Jan 8, 2020                                   Invisible College
+Intended status: Proposed Standard                          July 8, 2019
+
+              The Braid Protocol: Synchronization for HTTP
+                         draft-toomim-braid-00
+
+
+        :::::::::  :::::::::      :::     ::::::::::: :::::::::  
+        :+:    :+: :+:    :+:   :+: :+:       :+:     :+:    :+: 
+        +:+    +:+ +:+    +:+  +:+   +:+      +:+     +:+    +:+ 
+        +#++:++#+  +#++:++#:  +#++:++#++:     +#+     +#+    +:+ 
+        +#+    +#+ +#+    +#+ +#+     +#+     +#+     +#+    +#+ 
+        #+#    #+# #+#    #+# #+#     #+#     #+#     #+#    #+# 
+        #########  ###    ### ###     ### ########### ######### 
+
+
+Abstract
+
+  Braid is a proposal for a new version of HTTP that transforms it from
+  a state *transfer* protocol into a state *synchronization* protocol.
+  Braid puts the power of Operational Transform and CRDTs onto the web,
+  improving network performance and robustness, and enabling
+  peer-to-peer web applications.
+  
+  At the same time, Braid creates an open standard for the dynamic
+  internal state of websites.  Programmers can access state uniformly,
+  whether local or on another website.  This creates a separation of UI
+  from State, and allows any user to edit or choose their own UI for any
+  website's state.
+
+  We have a working prototype of the Braid, and have deployed it with
+  production websites.  This document describes the protocol, how it
+  differs from prior versions of HTTP, and a plan to deploy it in a
+  backwards-compatible way, where web developers can opt into the new
+  synchronization features without breaking the rest of the web.
+
+
+
+IETF Status of this Memo
+
+  This Internet-Draft is submitted in full conformance with the
+  provisions of BCP 78 and BCP 79.
+
+  Internet-Drafts are working documents of the Internet Engineering Task
+  Force (IETF), its areas, and its working groups.  Note that other
+  groups may also distribute working documents as Internet-Drafts.  The
+  list of current Internet-Drafts is at
+  http://datatracker.ietf.org/drafts/current/.
+
+  Internet-Drafts are draft documents valid for a maximum of six months
+  and may be updated, replaced, or obsoleted by other documents at any
+  time.  It is inappropriate to use Internet-Drafts as reference
+  material or to cite them other than as "work in progress."
+
+  The list of current Internet-Drafts can be accessed at
+  https://www.ietf.org/1id-abstracts.html
+
+  The list of Internet-Draft Shadow Directories can be accessed at
+  https://www.ietf.org/shadow.html
+
+
+
+
+==================
+== Introduction ==
+
+  HTTP was initially designed to transfer static pages.  If a page
+  changes, it is the client's responsibility to issue another GET
+  request.  This made sense when pages were static and written by hand.
+  However, today's websites are dynamic, generated from databases, and
+  continuously mutate as their state changes.  Now we need state
+  *synchronization*, not just state *transfer*.
+
+  Unfortunately, there is no standard way to synchronize.  Instead,
+  programmers write non-standard code; wiring together custom protocols
+  over WebSockets and long-polling XMLHTTPrequests with stacks of
+  Javascript frameworks.  The task of connecting a UI with data is one
+  that every dynamic website has to do, but there is no standard way to
+  do it.
+
+      ======= HTTP Websites =======      ====== Braid Websites ======
+
+      Today's websites are               Braid generalizes HTTP and
+      generated from multiple            REST into a uniform standard
+      layers of state across             that synchronizes state
+      multiple computers.  Each          within and between dynamic
+      layer has a different API.         websites.
+
+        * Non-standard state API          o Standard state API
+
+        _Client__
+       /         \ 
+      :  o o o o  :   Webpage DOM          o o o o       State
+      :   \|  \|  :                         \|  \|  
+      :    *   *  :   HTML Templates         o   o       State
+      :   /|  /|  :                         /|  /|  
+      :  * * * *  :   JS Models            o o o o       State
+       \ | | | | /                         | | | |  
+         | | | |                           | | | |
+         o o o o    - http:// -            o o o o     - braid:// -
+       / | | | | \                         | | | | 
+      :  * * * *  :   Views                o o o o       State
+      :  |  \| |  :                        |  \| |   
+      :  *   * *  :   Controllers          o   o o       State
+      :   \ / \|  :                         \ / \| 
+      :    *   *  :   Models                 o   o       State
+      :     \ /   :                           \ /
+       \.... * ../    Database                 o         State
+         Server
+
+      Today's programmers have to        On the braid, each piece of
+      learn each API, and wire them      state (o) has a URL; whether
+      together, making sure that         public, or internal to a
+      changes to shared state            client or server.  Any state
+      synchronize across all             can be a function of other
+      layers and computers.              state, and dynamically
+                                         recomputes when its
+                                         dependencies change. Braid
+                                         guarantees the network will
+                                         synchronize.
+
+
+
+  As the web becomes more dynamic and data-driven, the complexity of the
+  non-standard Javascript stack grows, and an increasing amount of data
+  is inaccessible to the open web.  The result is a web which is open on
+  the surface, but closed internally: websites can link to each other's
+  *pages*, but cannot easily share each other's internal *state*.
+
+  We can solve this by generalizing HTTP into a *synchronization*
+  protocol, which replaces the complex Javascript stack, while providing
+  new features, and making website internal state accessible anywhere
+  desired, and realtime synchronized by default.
+
+  We have a working prototype of the braid, and have deployed it with
+  production websites.  The prototype is implemented as a polyfill
+  library, which adds Braid features to existing browsers and servers.
+
+  This document describes the new protocol, how it differs from prior
+  versions of HTTP, and a plan to deploy it in a backwards-compatible
+  way, where web developers can opt into the new synchronization
+  features without breaking the rest of the web.
+
+
+
+=====================
+== Synchronization ==
+
+  The main trick is standardizing synchronization.
+
+  *Synchronization* is a problem that occurs whenever two or more
+  computers or threads access the same state. Synchronization code is
+  tricky to write, and can result in clobbers, corruptions, or race
+  conditions.
+
+  This is a challenging problem, which has seen a number of partial
+  attempts in HTTP (e-tags, cache control, PATCH, JSON-diff, SSE) [cite,
+  cite, cite, cite, cite].
+
+  Luckily, a set of maturing synchronization technologies (such as
+  Operational Transform and CRDTs) can now automate and encapsulate
+  synchronization within a library. They can synchronize arbitrary JSON
+  data structures across an arbitrary set of computers that make
+  arbitrary mutations, and consistently merge their edits into a valid
+  result, without a central server, in the face of arbitrary network
+  delays and dropouts. In other words, it is now possible to interact
+  with state stored anywhere on a network as if it is a local variable,
+  and program as if it is already downloaded and always up-to-date.
+
+  Unfortunately, each synchronizer implements a different protocol, with
+  a different set of features and tradeoffs. But we have found that
+  their network messages actually encode the same information, and that
+  we can encode a standard protocol, that different synchronizers can
+  interoperate over. We have run successful tests interoperating a CRDT
+  [1] and OT [2] system, for instance, over the common Braid protocol.
+
+  Braid proposes a common language for synchronizers, so that they can
+  interoperate, and embeds it as an extension to HTTP.
+
+
+  Reliable, efficient synchronization solves a number of the Web's
+  outstanding problems in networking and caching:
+
+    - Caches update automatically and instantly, because servers promise
+      to push changes to their subscribers.  This obsoletes the
+      `cache-control` and `refresh` headers, and the `max-age`
+      heuristic.  Users never need to force-clear their cache.
+
+    - Updates go over the network as diffs, which can be much smaller
+      than the resources they modify, making network usage much more
+      efficient.
+
+    - Web apps get an offline mode for free.  Edits from multiple
+      clients merge automatically once they come online.  Network
+      failures recover transparently.
+
+    - *Reload* buttons in browsers become unnecessary, and can be
+      removed for braid sites.  Browsers automatically discover and
+      display the most recent version on their own.
+
+    - Web apps require roughly 70% less code to build (in our
+      experiments), because programmers do not need web frameworks or
+      custom logic to wire together a stack of server-state and
+      client-state.  This work is automated by the protocol.
+
+    - Every <textarea> becomes a collaborative editor (like Google Docs)
+      by default.
+
+    - Servers become optional.  Many web apps can function without a
+      server, because peers can synchronize with one another directly
+      over the protocol.
+
+
+==============================
+== Separating UI from State ==
+
+  When an application's entire state is on the braid, any user interface
+  can synchronize with it in a standard way, and it becomes easy to
+  mix-and-match UIs and state. You can incorporate state from another
+  website into your own website. You can write a new user interface for
+  an existing website's state. You can create new state, to develop new
+  features. You can share the new UI with your friends, so they can use
+  the new features. Then they can share it, and grow a new userbase for
+  the new features.
+
+  > **Note:** Can we say here that you can use the same methods of the
+  >   network protocol (get and set) for internal state as well? We
+  >   extend REST with synchronization, and functionally-generated
+  >   state, so that GET will get one and subscribe, which makes the
+  >   insides of a website like a spreadsheet, where you edit any one
+  >   and it updates the rest.... *AND* --> then you can access state on
+  >   any other site over the network as easily as a local variable.
+  >
+  >
+  > Maybe a simpler way to do that is to just show some example code and
+  > say that it works:
+  > 
+  > state.x
+  > state['/foo']
+  > state['https://foo.com/bar]
+  > 
+  > And then I can make the point about this working by collapsing time
+  > and space, using a trick of synchronization, if needed.
+
+  We have a working prototype of the Braid protocol, and have deployed
+  it with production websites. This document describes the new protocol,
+  how it differs from prior versions of HTTP, and a plan to deploy it in
+  a backwards-compatible way, where web developers can opt into the new
+  synchronization features without breaking the rest of the web.
+
+
+==========================================
+== Deployment and Upgrade Plan ==
+
+  We will grow a new distributed open web to outcompete the existing
+  monopolies. That we might not persuade the existing monopolies to
+  change their ways and find new business models (like Aol), but we can
+  develop our own pages, for our own needs, and yet by building them on
+  this platform, build them together into something good. Like we can
+  build our own personal websites, or blogs, and link them together so
+  that they become news feeds of other people's sites, and supporting
+  realtime edits, like chat, with realtime notifications, providing the
+  same functionality as facebook, for the group of people building
+  profiles this way.
+
+  - First, polyfill library
+    - Easy to test, experiment, change
+    - Each website can experiment, do things a little differently,
+      peers can implement only the features they want/need
+    - Get people using it
+  - Then, incorporate into HTTP spec, and browsers, to get efficiency
+    - Saves a roundtrip
+    - Implement in C
+    - Overcome JSON encoding limitations
+
+
+==============================
+== Proposed Changes to HTTP ==
+
+  Braid is composed of a set of opt-in changes that any browser or
+  server can implement.
+
+  Whereas HTTP is explicitly client/server, Braid is capable of running
+  peer-to-peer.
+
+  To do this, it generalizes the explicit request/response pattern of
+  HTTP into a set of common messages, opened over a persistent encrypted
+  connection.
+
+
+Subscriptions
+
+  Instead of just *getting* state at a snapshot of time, a Braid client
+  also *subscribes* to future changes.  We implement this by adding
+  semantics to GET, and adding a FORGET method:
+
+  ---------------------------------------------------------------------
+  | HTTP method    | Braid method | What's new                        |
+  | -------------- | ------------ | --------------------------------- | 
+  | Get            | Get          | Also subscribes to future updates |
+  |                | Forget       | Ends a "Get" subscription         |
+  | Put/Post/Patch | Set          | Also updates all subscribers      |
+  | Delete         | Delete       | Also updates all subscribers      |
+  ---------------------------------------------------------------------
+
+  This requires only minimal changes to HTTP's semantics. Programmers
+  can thus reuse most of their knowledge from HTTP when building Braid
+  applications.  There is one new method, `forget`, which is usually
+  issued automatically by Braid libraries rather than programmers.
+  Finally, Braid unifies the `put`, `post`, and `patch` methods in to a
+  single `set` method, which is able to both create state and change
+  state, and can optionally do so with a patch, as is explained below.
+
+
+Generalized request/response
+
+  Whereas HTTP messages are either a *request* or *response* in a
+  client-initiated connection, braid messages can be initiated by either
+  peer.
+
+  --------------------------------------------------------------
+  | HTTP         | Braid       | Meaning                       |
+  | ------------ | ----------- | ----------------------------- |
+  | Get Request  | Get message | "I want this"                 |
+  | Get Response | Set message | "This is the current version" |
+  | Put Request  | Set message | "This is the current version" |
+  | Put Response | Ack message | "I accept this version"       |
+  --------------------------------------------------------------
+
+  Note that a Braid peer responds to a GET with a SET, whereas HTTP has
+  an explicit *response* block.  It turns out that a GET response
+  message has the same effect on a peer as a SET request message-- both
+  set the state on the recipient.
+
+
+
+Linked JSON
+
+
+Websocket Transport and Messaging (for the Polyfill Library)
+
+  Messages are sent over the Websocket encoded as JSON.  There are five
+  basic messages:
+
+    {get: "path"}
+    {set: "path", val: {something: 3}}
+    {forget: "path"}
+    {delete: "path"}
+    {ack: "path"}
+
+  More advanced messages add attributes to the JSON:
+
+    {get: "path", version: "v2", parents: ["v1"]}
+    {set: "path", version: "v2", parents: ["v1"], patches: ["[3] = 9"]}
+    {ack: "path", version: "v2"}
+
+  These additional attributes provide the information necessary to
+  synchronize an OT or CRDT algorithm.
+
+Versioning
+
+  Optional.  Makes simple synchronizers easy, and complex synchronizers
+  possible.  Can mix and match features, in different combinations, for
+  different applications.  <span style='background-color:yellow'>More
+  info here? Not sure I understand this paragraph CKM</span>
+
+  Even though there are many synchronizers, it is possible for them to
+  communicate in a common language.  Different synchronizers use
+  different data structures internally, and have different network
+  messages-- however, the *information* they send can all be represented
+  with a common set of concepts:
+
+   - VERSIONS define points in time, irrespective of space
+   - LOCATIONS define points of space, irrespective of time
+   - PATCHES replace regions of space, across spans of time
+
+  These three concepts are enough to represent any type of change to a
+  JSON data structure.  (We have verified this by translating the
+  network messages of ShareDB and Automerge into these concepts and they
+  still work.)
+
+  However, synchronizers also differ in how they *merge* changes to the
+  same region of state.  These differences can be captured as a *merge
+  type*:
+
+   - MERGE TYPES define how edits to the same location resolve
+
+  If a synchronizer expresses state changes using versions, locations,
+  and patches, and specifies its merge types, then it can synchronize
+  with any other braid synchronizer implementing the same merge types,
+  no matter their internal implementation.
+
+  Finally, synchronizers also broadcast *acknowledgements* of the
+  versions they have received, in order to tell their peers that they
+  have moved forward in time, and will no longer refer to old history
+  when sending patches.  This allows their peers to prune their history
+  logs, and free up unused memory:
+
+   - ACKNOWLEDGEMENTS of versions allow peers to prune historical memory
+
+  The rest of this section explains how these concepts work together.
+
+
+  == VERSIONS ==
+
+  == PATCHES ==
+
+  == LOCATIONS ==
+
+  == MERGE TYPES ==
+
+
+
+
+================
+== Conclusion ==
+
+
+
+
+====================
+==  Administrivia ==
+
+Security Considerations
+
+IANA Considerations
+
+  This document has no actions for IANA.
+
+Copyright Notice
+
+  Copyright (c) 2019 IETF Trust and the persons identified as the
+  document authors.  All rights reserved.
+
+  This document is subject to BCP 78 and the IETF Trust's Legal
+  Provisions Relating to IETF Documents
+  (http://trustee.ietf.org/license-info) in effect on the date of
+  publication of this document.  Please review these documents
+  carefully, as they describe your rights and restrictions with respect
+  to this document.  Code Components extracted from this document must
+  include Simplified BSD License text as described in Section 4.e of the
+  Trust Legal Provisions and are provided without warranty as described
+  in the Simplified BSD License.
+
+
+Author's Address
+
+  Michael Toomim
+  Invisible College, Berkeley
+
+  Email: toomim@gmail.com
+  Web:   https://invisible.college/@toomim
