@@ -4,6 +4,14 @@ Intended status: Proposed Standard                             R. Walker
                                                        Invisible College
                                                             July 8, 2019
 
+        :::::::::  :::::::::      :::     ::::::::::: :::::::::  
+        :+:    :+: :+:    :+:   :+: :+:       :+:     :+:    :+: 
+        +:+    +:+ +:+    +:+  +:+   +:+      +:+     +:+    +:+ 
+        +#++:++#+  +#++:++#:  +#++:++#++:     +#+     +#+    +:+ 
+        +#+    +#+ +#+    +#+ +#+     +#+     +#+     +#+    +#+ 
+        #+#    #+# #+#    #+# #+#     #+#     #+#     #+#    #+# 
+        #########  ###    ### ###     ### ########### ######### 
+
               The Braid Protocol: Synchronization for HTTP
                          draft-toomim-braid-00
 
@@ -14,7 +22,7 @@ Abstract
   Braid puts the power of Operational Transform and CRDTs onto the web,
   improving network performance and robustness, and enabling
   peer-to-peer web applications.
-  
+
   At the same time, Braid creates an open standard for the dynamic
   internal state of websites.  Programmers can access state uniformly,
   whether local or on another website.  This creates a separation of UI
