@@ -15,14 +15,35 @@ Intended status: Proposed Standard                             R. Walker
               The Braid Protocol: Synchronization for HTTP
                          draft-toomim-braid-00
 
+
+Todo:
+
+  - Define "state"
+  - Explain time and space for someone who could get confused by that idea
+  - Explain the configurable merge types better.
+
+  > Introduction and abstract were good
+  > Synchronization was good
+  > As a whole it makes sense
+  > - There's a clear need
+  > - There's a clear benefit
+  > Really liked the network messages, and the explanation of each msg.
+
+  - Proposed Changes to HTTP -> Proposed Extension to HTTP
+    - Move the Linked JSON out of there and into its own proposed new
+      content-type
+  - Say that you connect on websocket at path __connect_to_braid__, and
+    then send messages as described below.
+
+
 Abstract
 
-  Braid is a proposal for a new version of HTTP that transforms it from
-  a state *transfer* protocol into a state *synchronization* protocol.
-  Braid puts the power of Operational Transform and CRDTs onto the web,
+  Braid is an extension to HTTP that transforms it from a state
+  *transfer* protocol into a state *synchronization* protocol.  Braid
+  puts the power of Operational Transform and CRDTs onto the web,
   improving network performance and robustness, and enabling
   peer-to-peer web applications.
-
+  
   At the same time, Braid creates an open standard for the dynamic
   internal state of websites.  Programmers can access state uniformly,
   whether local or on another website.  This creates a separation of UI
@@ -30,10 +51,10 @@ Abstract
   website's state.
 
   We have a working prototype of the Braid, and have deployed it with
-  production websites.  This memo describes the protocol, how it
-  differs from prior versions of HTTP, and a plan to deploy it in a
-  backwards-compatible way, where web developers can opt into the new
-  synchronization features without breaking the rest of the web.
+  production websites.  This memo describes the protocol, how it differs
+  from today's HTTP, and a plan to deploy it in a backwards-compatible
+  way, where web developers can opt into the new synchronization
+  features without breaking the rest of the web.
 
 
 
@@ -85,12 +106,12 @@ Table of Contents
 
 1. Introduction
 
-  HTTP was initially designed to transfer static pages.  If a page
-  changes, it is the client's responsibility to issue another GET
-  request.  This made sense when pages were static and written by hand.
-  However, today's websites are dynamic, generated from databases, and
-  continuously mutate as their state changes.  Now we need state
-  *synchronization*, not just state *transfer*.
+  HTTP is designed to transfer static pages.  If a page changes, it is
+  the client's responsibility to issue another GET request.  This made
+  sense when pages were static and written by hand.  However, today's
+  websites are dynamic, generated from databases, and continuously
+  mutate as their state changes.  Now we need state *synchronization*,
+  not just state *transfer*.
 
   Unfortunately, there is no standard way to synchronize.  Instead,
   programmers write non-standard code; wiring together custom protocols
@@ -160,10 +181,10 @@ Table of Contents
   polyfill library, which adds Braid features to existing browsers and
   servers.
 
-  This document describes the new protocol, how it differs from prior
-  versions of HTTP, and a plan to deploy it in a backwards-compatible
-  way, where web developers can opt into the new synchronization
-  features without breaking the rest of the web.
+  This document describes the new protocol, how it differs from today's
+  HTTP, and a plan to deploy it in a backwards-compatible way, where web
+  developers can opt into the new synchronization features without
+  breaking the rest of the web.
 
 
 
@@ -177,9 +198,10 @@ Table of Contents
   tricky to write, and can result in clobbers, corruptions, or race
   conditions.
 
-  This is a challenging problem, which has seen a number of partial
-  attempts in HTTP, such as e-tags, cache control, PATCH, JSON-diff, and
-  SSE.
+  A number of extensions to the HTTP standard touch on synchronization,
+  such as e-tags, cache control, PATCH, JSON-diff, and SSE.  However,
+  they do not solve the problem completely, and programmers still write
+  non-standard state synchronization code.
 
   Luckily, a set of maturing synchronization technologies (such as
   Operational Transform and CRDTs) can now automate and encapsulate
@@ -256,10 +278,11 @@ Table of Contents
 
         -  -              -  -       Before the web, people used
      /        \        /        \    closed networks like America
-    |   x   x  |      |   x  x   |   Online.  Content was
-    |          |      |          |   encapsulated behind
+    |   x---x  |      |   x--x   |   Online.  Content was
+    |    \ /   |      |    \     |   encapsulated behind
      \    x   /        \    x   /    proprietary protocols.
         -  -              -  -
+
         Aol            Compuserve
 
 
@@ -268,10 +291,11 @@ Table of Contents
 
         -  o--------------o  -       The web lets any site define
      /        o--------o        \    *pages* at URLs.  A site can
-    |   x   x  o------o   x  x   |   *link* to another site's pages,
-    |          o------o          o   adding value to both sites.
+    |   x---x  o------o   x--x   |   *link* to another site's pages,
+    |    \ /   o------o    \     o   adding value to both sites.
      \    x   o        o    x   /
         -  o--------------o  -
+
        Facebook         NY Times
 
 
@@ -282,8 +306,9 @@ Table of Contents
         |/    o'-------o  |  |       *states* at URLs.  A state can
     o---o---o---------o---o--o---o   be a *function* of other states.
        / \ / \ o------o    \  \      When a state changes, the others
-      o   o---o \__.   o    o   o    automatically synchronize with it,
-        o--o        `-----o--o       like a spreadsheet.
+      o   o---o \__.   o    o  .o    automatically synchronize with it,
+        o--o        `-----o----'     like a spreadsheet.
+
       My Stuff         Your Stuff
 
 
@@ -323,8 +348,8 @@ Table of Contents
   with existing HTTP clients and servers.  Any client accessing a Braid
   server via HTTP 1, 2, or 3 will be able to GET, PUT, and POST Braid
   state, but without full synchronization capabilities.  Likewise, Braid
-  clients can access state on HTTP servers, but will have to poll the
-  server for updates.
+  clients can access state on HTTP servers, but have to poll the server
+  for updates.
 
 
 
@@ -415,7 +440,7 @@ Table of Contents
 
 
 
-Subscriptions
+4.3. Subscriptions
 
   In the Braid model, whenever a client requests some state, it also
   subscribes to new versions of that state.  This requires only minor

@@ -20,12 +20,12 @@ subject to a Simplified BSD License) in Contributions.
 ## Other Resources
 
 Discussion of this work will occur on a
-[IETF mailing list](https://mailarchive.ietf.org/arch/browse/braid/)
-([subscribe](https://www.ietf.org/mailman/listinfo/braid)).  In addition to
-contributions in GitHub, you are encouraged to participate in discussions there.
+[IETF mailing list](https://lists.w3.org/Archives/Public/ietf-http-wg/).  In
+addition to contributions in GitHub, you are encouraged to participate in
+discussions there.
 
 **Note**: Some working groups adopt a policy whereby substantive discussion of
 technical issues needs to occur on the mailing list.
 
 You might also like to familiarize yourself with other
-[working group documents](https://datatracker.ietf.org/wg/cookie/documents/).
+[working group documents](https://github.com/httpwg/http-extensions/blob/master/CONTRIBUTING.md).
